@@ -1,11 +1,9 @@
 package com.app.hungrify.main.controller;
 
+import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 //for Angular Client (withCredentials)
 //@CrossOrigin(origins = "http://localhost:8081", maxAge = 3600, allowCredentials="true")
@@ -13,9 +11,22 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/test")
 public class TestController {
-  @GetMapping("/all")
+
+  private ChatModel chatModel;
+
+    public TestController(ChatModel chatModel) {
+        this.chatModel = chatModel;
+    }
+
+
+    @GetMapping("/all")
   public String allAccess() {
     return "Public Content.";
+  }
+
+  @GetMapping("/ai")
+  public String testAi(@RequestBody String message){
+    return chatModel.call(message);
   }
 
   @GetMapping("/user")
