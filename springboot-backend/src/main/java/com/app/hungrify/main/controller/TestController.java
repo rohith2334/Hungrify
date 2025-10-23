@@ -18,7 +18,6 @@ public class TestController {
         this.chatModel = chatModel;
     }
 
-
     @GetMapping("/all")
   public String allAccess() {
     return "Public Content.";
