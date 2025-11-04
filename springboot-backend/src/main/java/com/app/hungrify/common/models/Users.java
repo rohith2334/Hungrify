@@ -43,6 +43,8 @@ public class Users {
     @Email
     @Column(length = 255, unique = true)
     private String email;
+    @Column(length = 255)
+    @Enumerated(EnumType.STRING)
     private ERole roles;
     @Column(length = 255)
     private String profileImage;
