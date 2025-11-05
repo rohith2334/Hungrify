@@ -2,7 +2,7 @@ package com.app.hungrify.main.service;
 
 // package com.app.hungrify.main.service;
 
-import com.app.hungrify.main.dto.RestaurantSummaryDto;
+import com.app.hungrify.main.dto.user.RestaurantSummaryDto;
 import com.app.hungrify.main.models.Restaurant;
 import com.app.hungrify.main.repository.RestaurantRepository;
 import lombok.RequiredArgsConstructor;

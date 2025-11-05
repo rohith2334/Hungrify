@@ -1,4 +1,4 @@
-package com.app.hungrify.main.dto;
+package com.app.hungrify.main.dto.user;
 
 import com.app.hungrify.main.models.FoodItemProfile;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -9,7 +9,6 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Food item DTO for API responses.

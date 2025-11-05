@@ -9,20 +9,14 @@ import com.app.hungrify.main.repository.FoodItemRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.app.hungrify.main.dto.AddToCartRequest;
-import com.app.hungrify.main.dto.CartDto;
-import com.app.hungrify.main.dto.CartItemDto;
-import com.app.hungrify.main.models.FoodItem;
+import com.app.hungrify.main.dto.user.AddToCartRequest;
+import com.app.hungrify.main.dto.user.CartDto;
 import com.app.hungrify.main.util.JsonUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Cart is persisted inside users.profile_json.cart. This service updates that JSON safely.

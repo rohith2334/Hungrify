@@ -1,4 +1,4 @@
-package com.app.hungrify.main.dto;
+package com.app.hungrify.main.dto.user;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

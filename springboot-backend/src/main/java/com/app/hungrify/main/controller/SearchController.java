@@ -2,7 +2,7 @@ package com.app.hungrify.main.controller;
 
 // package com.app.hungrify.main.controller;
 
-import com.app.hungrify.main.dto.RestaurantWithFoodsDto;
+import com.app.hungrify.main.dto.user.RestaurantWithFoodsDto;
 import com.app.hungrify.main.service.SearchService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

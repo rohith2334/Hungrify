@@ -2,9 +2,9 @@ package com.app.hungrify.main.controller;
 
 // package com.app.hungrify.main.controller;
 
-import com.app.hungrify.main.dto.AddToCartRequest;
-import com.app.hungrify.main.dto.CartDto;
-import com.app.hungrify.main.dto.OkResponse;
+import com.app.hungrify.main.dto.user.AddToCartRequest;
+import com.app.hungrify.main.dto.user.CartDto;
+import com.app.hungrify.main.dto.user.OkResponse;
 import com.app.hungrify.main.service.CartService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
