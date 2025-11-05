@@ -1,5 +1,7 @@
 package com.app.hungrify.main.models;
 
+import com.app.hungrify.main.util.JsonListConverter;
+import com.app.hungrify.main.util.JsonMapConverter;
 import lombok.*;
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -7,6 +9,8 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.Instant;
 import java.math.BigDecimal;
+import java.util.List;
+import java.util.Map;
 
 @Entity
 @Table(name = "food_item_profiles",
@@ -55,13 +59,16 @@ public class FoodItemProfile {
     private SpiceLevel spiceLevel;
 
     @Column(columnDefinition = "json")
-    private String allergens;
+    @Convert(converter = JsonListConverter.class)
+    private List<String> allergens;
 
     @Column(columnDefinition = "json")
-    private String tags;
+    @Convert(converter = JsonListConverter.class)
+    private List<String> tags;
 
     @Column(columnDefinition = "json")
-    private String tasteProfile;
+    @Convert(converter = JsonMapConverter.class)
+    private Map<String, Object> tasteProfile;
 
     // Derived booleans in SQL are stored as generated columns; map them read-only
     @Column(insertable = false, updatable = false)

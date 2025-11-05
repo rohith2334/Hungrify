@@ -1,12 +1,14 @@
 package com.app.hungrify.main.models;
 
 
+import com.app.hungrify.main.util.JsonMapConverter;
 import lombok.*;
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.Map;
 
 @Entity
 @Table(name = "order_items",
@@ -38,10 +40,12 @@ public class OrderItem {
     private BigDecimal unitPrice;
 
     @Column(columnDefinition = "json")
-    private String customizationSelected;
+    @Convert(converter = JsonMapConverter.class)
+    private Map<String, Object> customizationSelected;
 
-    @Column(columnDefinition = "json", nullable = false)
-    private String itemSnapshot; // snapshot of item at time of order; JSON
+    @Column(columnDefinition = "json")
+    @Convert(converter = JsonMapConverter.class)
+    private Map<String, Object> itemSnapshot; // snapshot of item at time of order; JSON
 
     @CreationTimestamp
     private Instant createdAt;

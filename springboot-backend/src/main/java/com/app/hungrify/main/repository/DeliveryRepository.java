@@ -15,4 +15,6 @@ public interface DeliveryRepository extends JpaRepository<Delivery, Long> {
     List<Delivery> findByPartnerUser(Users partner);
 
     List<Delivery> findByStatus(Delivery.DeliveryStatus status);
+
+    Optional<Delivery> findByOrderOrderId(Long orderId);
 }

@@ -1,6 +1,7 @@
 package com.app.hungrify.common.models;
 
 
+import com.app.hungrify.main.util.JsonMapConverter;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -11,6 +12,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.Instant;
 import java.util.Date;
+import java.util.Map;
 
 @Entity
 @Table(name = "users")
@@ -65,7 +67,8 @@ public class Users {
     private String address;
     private Instant lastLogin;
     @Column(columnDefinition = "json")
-    private String profileJson;
+    @Convert(converter = JsonMapConverter.class)
+    private Map<String, Object> profileJson;
     @CreationTimestamp
     private Instant createdAt;
     @UpdateTimestamp

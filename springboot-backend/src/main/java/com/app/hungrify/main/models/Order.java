@@ -2,6 +2,7 @@ package com.app.hungrify.main.models;
 
 
 import com.app.hungrify.common.models.Users;
+import com.app.hungrify.main.util.JsonMapConverter;
 import lombok.*;
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -10,6 +11,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 
 @Entity
 @Table(name = "orders",
@@ -45,7 +47,7 @@ public class Order {
 
     @Enumerated(EnumType.STRING)
     @Column(length = 20)
-    private PaymentMethod paymentMethod = PaymentMethod.upi;
+    private PaymentMethod paymentMethod = PaymentMethod.credit_card;
 
     @Enumerated(EnumType.STRING)
     @Column(length = 20)
@@ -54,7 +56,8 @@ public class Order {
     private String paymentTransactionRef;
 
     @Column(columnDefinition = "json")
-    private String paymentMeta;
+    @Convert(converter = JsonMapConverter.class)
+    private Map<String, Object> paymentMeta;
 
     private Instant paidAt;
 
@@ -68,7 +71,8 @@ public class Order {
     private BigDecimal deliveryLon;
 
     @Column(columnDefinition = "json")
-    private String orderMeta;
+    @Convert(converter = JsonMapConverter.class)
+    private Map<String, Object> orderMeta;
 
     @CreationTimestamp
     private Instant createdAt;
@@ -81,7 +85,7 @@ public class Order {
 
     public enum OrderStatus { pending, confirmed, preparing, out_for_delivery, delivered, cancelled }
 
-    public enum PaymentMethod { credit_card, debit_card, upi, wallet, cod }
+    public enum PaymentMethod { credit_card, debit_card, wallet, cod }
 
     public enum PaymentStatus { pending, paid, failed, refunded }
 }

@@ -2,6 +2,7 @@ package com.app.hungrify.main.models;
 
 
 import com.app.hungrify.common.models.Users;
+import com.app.hungrify.main.util.JsonMapConverter;
 import lombok.*;
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -10,6 +11,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.time.Instant;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 
 @Entity
 @Table(name = "restaurants",
@@ -56,7 +58,8 @@ public class Restaurant {
     private BigDecimal longitude;
 
     @Column(columnDefinition = "json")
-    private String restaurantMeta;
+    @Convert(converter = JsonMapConverter.class)
+    private Map<String, Object> restaurantMeta;
 
     @Column(nullable = false)
     private Boolean isActive = true;

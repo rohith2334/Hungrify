@@ -1,10 +1,14 @@
 package com.app.hungrify.main.models;
 
+import com.app.hungrify.main.util.JsonListConverter;
+import com.app.hungrify.main.util.JsonMapConverter;
 import lombok.*;
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.Instant;
+import java.util.List;
+import java.util.Map;
 
 @Entity
 @Table(name = "ingredients",
@@ -26,10 +30,12 @@ public class Ingredient {
     private String displayName;
 
     @Column(columnDefinition = "json")
-    private String allergens;   // JSON array
+    @Convert(converter = JsonListConverter.class)
+    private List<String> allergens;   // JSON array
 
     @Column(columnDefinition = "json")
-    private String meta;
+    @Convert(converter = JsonMapConverter.class)
+    private Map<String, Object> meta;
 
     @CreationTimestamp
     private Instant createdAt;

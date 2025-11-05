@@ -2,12 +2,14 @@ package com.app.hungrify.main.models;
 
 
 import com.app.hungrify.common.models.Users;
+import com.app.hungrify.main.util.JsonMapConverter;
 import lombok.*;
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.Instant;
+import java.util.Map;
 
 @Entity
 @Table(name = "admin",
@@ -39,7 +41,8 @@ public class Admin {
     private String phone;
 
     @Column(columnDefinition = "json")
-    private String profileJson;
+    @Convert(converter = JsonMapConverter.class)
+    private Map<String, Object> profileJson;
 
     @CreationTimestamp
     private Instant createdAt;

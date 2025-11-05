@@ -1,11 +1,13 @@
 package com.app.hungrify.main.models;
 
 import com.app.hungrify.common.models.Users;
+import com.app.hungrify.main.util.JsonMapConverter;
 import lombok.*;
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.Instant;
+import java.util.Map;
 
 @Entity
 @Table(name = "deliveries",
@@ -44,7 +46,8 @@ public class Delivery {
     private Instant actualDeliveryTime;
 
     @Column(columnDefinition = "json")
-    private String deliveryMeta;
+    @Convert(converter = JsonMapConverter.class)
+    private Map<String, Object> deliveryMeta;
 
     @CreationTimestamp
     private Instant createdAt;

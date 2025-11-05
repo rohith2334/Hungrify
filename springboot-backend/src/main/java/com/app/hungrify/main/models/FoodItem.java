@@ -1,5 +1,6 @@
 package com.app.hungrify.main.models;
 
+import com.app.hungrify.main.util.JsonListConverter;
 import lombok.*;
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -8,6 +9,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 
 @Entity
 @Table(name = "food_items",
@@ -53,7 +55,8 @@ public class FoodItem {
     private Integer prepTimeMinutes;
 
     @Column(columnDefinition = "json")
-    private String imageUrls; // JSON array
+    @Convert(converter = JsonListConverter.class)
+    private List<String> imageUrls; // JSON array
 
     @Column(precision = 3, scale = 2)
     private BigDecimal rating;

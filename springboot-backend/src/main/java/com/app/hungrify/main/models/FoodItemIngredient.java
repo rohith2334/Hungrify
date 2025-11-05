@@ -1,10 +1,12 @@
 package com.app.hungrify.main.models;
 
+import com.app.hungrify.main.util.JsonMapConverter;
 import lombok.*;
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.Instant;
+import java.util.Map;
 
 @Entity
 @Table(name = "food_item_ingredients",
@@ -33,7 +35,8 @@ public class FoodItemIngredient {
     private Boolean removable = false;
 
     @Column(columnDefinition = "json")
-    private String removalEffects;
+    @Convert(converter = JsonMapConverter.class)
+    private Map<String, Object> removalEffects;
 
     @CreationTimestamp
     private Instant createdAt;

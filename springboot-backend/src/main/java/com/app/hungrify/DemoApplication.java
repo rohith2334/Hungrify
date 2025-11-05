@@ -6,8 +6,8 @@ import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
 @SpringBootApplication
-@EntityScan("com.app.hungrify.common.models")
-@EnableJpaRepositories("com.app.hungrify.common.repository")
+@EntityScan(basePackages = {"com.app.hungrify.common.models","com.app.hungrify.main.models"})
+@EnableJpaRepositories(basePackages = {"com.app.hungrify.common.repository","com.app.hungrify.main.repository"})
 public class DemoApplication {
 
 	public static void main(String[] args) {
