@@ -2,6 +2,8 @@ package com.app.hungrify.main.repository;
 
 
 import com.app.hungrify.main.models.Restaurant;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -12,31 +14,11 @@ import java.util.List;
 @Repository
 public interface RestaurantRepository extends JpaRepository<Restaurant, Long> {
 
-    /**
-     * Random sample of active restaurants.
-     * Used for Home/Discover when no filters are applied.
-     * MySQL RAND() is sufficient here for small samples.
-     */
-    @Query(value = """
-        SELECT * FROM restaurants
-        WHERE is_active = TRUE
-        ORDER BY RAND()
-        LIMIT :limit OFFSET :offset
-        """, nativeQuery = true)
-    List<Restaurant> findRandomSample(@Param("limit") int limit, @Param("offset") int offset);
+    // discovery: find by city and optional cuisine; when no filters we can rely on random sample via ORDER BY RAND() in native query
+    @Query("SELECT r FROM Restaurant r WHERE (:city IS NULL OR r.city = :city) AND (:cuisine IS NULL OR r.cuisine = :cuisine)")
+    Page<Restaurant> findByCityAndCuisine(@Param("city") String city, @Param("cuisine") String cuisine, Pageable pageable);
 
-
-    /**
-     * Paginated restaurants by city, ordered by name (or rating if you add it later).
-     */
-    @Query(value = """
-        SELECT * FROM restaurants
-        WHERE (:city IS NULL OR city = :city)
-          AND is_active = TRUE
-        ORDER BY name ASC
-        LIMIT :limit OFFSET :offset
-        """, nativeQuery = true)
-    List<Restaurant> findByCityWithPagination(@Param("city") String city,
-                                              @Param("limit") int limit,
-                                              @Param("offset") int offset);
+    // randomized sample when no filters - use native query for RAND (MySQL) or native dialect - I'll provide a native fallback
+    @Query(value = "SELECT * FROM restaurant WHERE is_active = true ORDER BY RAND() LIMIT :limit", nativeQuery = true)
+    List<Restaurant> findRandomActiveRestaurants(@Param("limit") int limit);
 }

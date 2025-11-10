@@ -38,7 +38,7 @@ public class OpenAPIConfig {
     License mitLicense = new License().name("MIT License").url("https://choosealicense.com/licenses/mit/");
 
     Info info = new Info()
-        .title("Job Search Porta API")
+        .title("Hungrify API")
         .version("1.0")
         .license(mitLicense);
 

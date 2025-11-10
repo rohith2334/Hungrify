@@ -1,51 +1,49 @@
 package com.app.hungrify.main.service;
 
-// package com.app.hungrify.main.service;
 
-import com.app.hungrify.main.dto.user.RestaurantSummaryDto;
-import com.app.hungrify.main.models.Restaurant;
-import com.app.hungrify.main.repository.RestaurantRepository;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
+import com.app.hungrify.main.dto.resturant.*;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
- * Basic restaurant listing logic. Keeps controllers thin.
+ * Restaurant service interface.
  */
-@Service
-@RequiredArgsConstructor
-public class RestaurantService {
-
-    private final RestaurantRepository restaurantsRepository;
+public interface RestaurantService {
 
     /**
-     * Returns a paginated/randomized list of restaurants for discovery.
-     * If city is provided, we restrict to that city. For "random" sample,
-     * the repository can use ORDER BY RAND() limited by page size,
-     * or a deterministic shuffle using offset.
+     * Discover restaurants paginated (randomized sample if no filters).
+     * @param city optional city
+     * @param cuisine optional cuisine
+     * @param page page number (1-based)
+     * @param limit page size
+     * @return paged restaurants
      */
-    public List<RestaurantSummaryDto> listRestaurants(String city, int page, int limit) {
-        int offset = (page - 1) * limit;
-        // NOTE: assumes repository has a method findByCityWithPagination or a custom query
-        List<Restaurant> restaurants = (city == null || city.isEmpty())
-                ? restaurantsRepository.findRandomSample(limit, offset)
-                : restaurantsRepository.findByCityWithPagination(city, limit, offset);
+    PagedRestaurantsResponseDto discoverRestaurants(String city, String cuisine, int page, int limit);
 
-        return restaurants.stream().map(this::toDto).collect(Collectors.toList());
-    }
+    /**
+     * Get restaurant details.
+     * @param restaurantId id
+     * @return RestaurantDetailDto
+     * @throws com.example.delivery.service.restaurant.exception.NotFoundException when not found
+     */
+    RestaurantDetailDto getRestaurantDetails(Long restaurantId);
 
-    private RestaurantSummaryDto toDto(Restaurant r) {
-        return RestaurantSummaryDto.builder()
-                .restaurantId(r.getRestaurantId())
-                .name(r.getName())
-                .cuisine(r.getCuisine())
-                .city(r.getCity())
-                .rating(r.getRestaurantMeta() != null && r.getRestaurantMeta().get("average_rating") != null
-                        ? new java.math.BigDecimal(r.getRestaurantMeta().get("average_rating").toString()) : null)
-                .restaurantMeta(r.getRestaurantMeta())
-                .isActive(r.getIsActive())
-                .build();
-    }
+    /**
+     * Build dashboard for restaurant (KPIs, current orders, popular dishes, inventory low).
+     * @param restaurantId id
+     * @param dateFrom ISO date string (yyyy-MM-dd) optional
+     * @param dateTo ISO date string optional
+     * @param limitPopular number of popular dishes to return
+     */
+    RestaurantDashboardResponseDto getDashboard(Long restaurantId, String dateFrom, String dateTo, int limitPopular);
+
+    /**
+     * Compute alerts list for restaurant.
+     */
+    List<AlertDto> getAlerts(Long restaurantId);
+
+    /**
+     * Update restaurant profile.
+     */
+    RestaurantDetailDto updateProfile(Long restaurantId, UpdateProfileRequestDto update);
 }
