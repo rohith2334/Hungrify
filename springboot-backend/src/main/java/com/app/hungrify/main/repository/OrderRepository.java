@@ -33,4 +33,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     // recent orders small list
     @Query("SELECT o FROM Order o WHERE o.restaurant.restaurantId = :restaurantId ORDER BY o.createdAt DESC")
     Page<Order> findRecentByRestaurant(@Param("restaurantId") Long restaurantId, Pageable pageable);
+
+    List<Order> findByUser_UserIdOrderByCreatedAtDesc(Long userId);
+
 }
