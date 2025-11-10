@@ -33,5 +33,19 @@ public interface FoodItemRepository extends JpaRepository<FoodItem, Long> {
     // for checking duplicates
     boolean existsByCanonicalNameAndRestaurant_RestaurantId(String canonicalName, Long restaurantId);
 
+    /**
+     * Fulltext search on food items with optional city filter.
+     * Uses MySQL MATCH AGAINST on fulltext index fields.
+     */
+    @Query(value = """
+        SELECT f.* FROM food_items f
+        JOIN restaurants r ON f.restaurant_id = r.restaurant_id
+        WHERE MATCH(f.display_name, f.canonical_name, f.short_description, f.long_description)
+              AGAINST (:query IN NATURAL LANGUAGE MODE)
+          AND (:city IS NULL OR LOWER(r.city) = LOWER(:city))
+          AND f.is_available = TRUE
+        """, nativeQuery = true)
+    List<FoodItem> searchFullText(@Param("query") String query, @Param("city") String city);
+
 }
 
