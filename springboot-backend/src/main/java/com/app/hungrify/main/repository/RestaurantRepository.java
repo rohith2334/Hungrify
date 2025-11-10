@@ -10,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface RestaurantRepository extends JpaRepository<Restaurant, Long> {
@@ -23,4 +24,25 @@ public interface RestaurantRepository extends JpaRepository<Restaurant, Long> {
     List<Restaurant> findRandomActiveRestaurants(@Param("limit") int limit);
 
     List<Restaurant> findByCityIgnoreCase(String city);
+
+    Optional<Restaurant> findByOwner_UserId(Long userId);
+
+    /**
+     * Find all restaurants that are inactive (pending approval).
+     *
+     * @return List of restaurants where isActive = false.
+     */
+    List<Restaurant> findByIsActiveFalse();
+
+    /**
+     * Find all active restaurants for discovery/search.
+     *
+     * @return List of restaurants where isActive = true.
+     */
+    List<Restaurant> findByIsActiveTrue();
+
+    /**
+     * Check if restaurant name exists for uniqueness enforcement.
+     */
+    boolean existsByNameIgnoreCase(String name);
 }

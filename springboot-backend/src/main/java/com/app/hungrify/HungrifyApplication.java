@@ -8,10 +8,10 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 @SpringBootApplication
 @EntityScan(basePackages = {"com.app.hungrify.common.models","com.app.hungrify.main.models"})
 @EnableJpaRepositories(basePackages = {"com.app.hungrify.common.repository","com.app.hungrify.main.repository"})
-public class DemoApplication {
+public class HungrifyApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(DemoApplication.class, args);
+		SpringApplication.run(HungrifyApplication.class, args);
 	}
 
 }
