@@ -12,6 +12,7 @@ import org.springframework.data.repository.query.Param;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 public interface OrderRepository extends JpaRepository<Order, Long> {
 
@@ -35,5 +36,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     Page<Order> findRecentByRestaurant(@Param("restaurantId") Long restaurantId, Pageable pageable);
 
     List<Order> findByUser_UserIdOrderByCreatedAtDesc(Long userId);
+
+    Optional<Order> findByPaymentTransactionRef(String txnId);
 
 }
