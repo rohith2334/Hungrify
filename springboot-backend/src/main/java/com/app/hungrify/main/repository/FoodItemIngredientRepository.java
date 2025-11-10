@@ -8,8 +8,11 @@ import java.util.List;
 
 public interface FoodItemIngredientRepository extends JpaRepository<FoodItemIngredient, Long> {
 
-    List<FoodItemIngredient> findByFoodItem(FoodItem item);
+//    List<FoodItemIngredient> findByFoodItem(FoodItem item);
+//
+//    List<FoodItemIngredient> findByIngredient(Ingredient ingredient);
 
-    List<FoodItemIngredient> findByIngredient(Ingredient ingredient);
+    List<FoodItemIngredient> findByFoodItem_ItemId(Long itemId);
+    void deleteByFoodItem_ItemId(Long itemId);
 }
 
