@@ -21,11 +21,12 @@ import java.util.Map;
 public class Admin {
 
     @Id
+    @Column(name = "admin_id")
     private Long adminId; // 1:1 mapping to users.user_id
 
     @MapsId
     @OneToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "admin_id", referencedColumnName = "userId", foreignKey = @ForeignKey(name = "fk_admin_user"))
+    @JoinColumn(name = "admin_id", foreignKey = @ForeignKey(name = "fk_admin_user"))
     private Users user;
 
     @Column(nullable = false, length = 100, unique = true)

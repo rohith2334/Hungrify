@@ -45,4 +45,5 @@ public interface RestaurantRepository extends JpaRepository<Restaurant, Long> {
      * Check if restaurant name exists for uniqueness enforcement.
      */
     boolean existsByNameIgnoreCase(String name);
+
 }

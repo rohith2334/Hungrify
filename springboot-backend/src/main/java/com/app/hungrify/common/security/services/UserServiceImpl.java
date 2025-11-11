@@ -1,5 +1,6 @@
 package com.app.hungrify.common.security.services;
 
+import com.app.hungrify.common.models.ERole;
 import com.app.hungrify.common.models.Users;
 import com.app.hungrify.common.payload.request.SignupRequest;
 import com.app.hungrify.common.repository.UserRepository;
@@ -8,49 +9,117 @@ import com.app.hungrify.main.dto.user.UpdateUserRequestDto;
 import com.app.hungrify.main.dto.user.UserProfileDto;
 import com.app.hungrify.main.exception.BadRequestException;
 import com.app.hungrify.main.exception.NotFoundException;
+import com.app.hungrify.main.models.Admin;
+import com.app.hungrify.main.models.Restaurant;
+import com.app.hungrify.main.repository.AdminRepository;
+import com.app.hungrify.main.repository.RestaurantRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.*;
 
 @Service
-
-public class UserServiceImpl implements UserService{
+@RequiredArgsConstructor
+public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
+    private final RestaurantRepository restaurantRepository;
+    private final AdminRepository adminRepository;
 
-
-
-    public UserServiceImpl(UserRepository customerRepository) {
-        this.userRepository = customerRepository;
-
-    }
 
 
     @Override
-    public ResponseEntity<?> createProfile(SignupRequest signUpRequest, Users customer) {
+    @Transactional
+    public ResponseEntity<?> createProfile(SignupRequest request, Users user) {
         try {
+            // ---------- 1. Populate user ----------
+            user.setUsername(request.getUsername());
+            user.setEmail(request.getEmail());
+            user.setPhone(request.getPhoneNumber());
+            user.setFirstName(request.getFirstName());
+            user.setLastName(request.getLastName());
+            user.setProfileImage(request.getProfileImage());
+            user.setAddress(request.getAddress());
+            user.setRoles(user.getRoles()); // store as string per schema
 
-            customer.setUsername(signUpRequest.getUsername());
-            customer.setEmail(signUpRequest.getEmail());
-            customer.setProfileImage(signUpRequest.getProfileImage());
+            Map<String, Object> profileJson = new HashMap<>();
+            String role = request.getRole().toLowerCase();
 
-            Users _customer = userRepository.save(customer);
+            // ---------- 2. Role-wise handling ----------
+            if (role.contains("restaurant")) {
+                profileJson.put("restaurant_profile", Map.of(
+                        "has_completed_onboarding", true,
+                        "open_hours", new ArrayList<>(),
+                        "delivery_time_range", "25-35",
+                        "dashboard_view", "standard"
+                ));
+                user.setProfileJson(profileJson);
+                Users savedUser = userRepository.save(user);
 
-            if (signUpRequest.getRole().equals("moderator")) {
-                //implement
+                Map<String, Object> restaurantMeta = new HashMap<>();
+                restaurantMeta.put("documents", new ArrayList<>());
+                restaurantMeta.put("rating_summary", Map.of("avg_rating", 0, "reviews_count", 0));
+                restaurantMeta.put("open_hours", new ArrayList<>());
+                restaurantMeta.put("admin_note", null);
+
+                restaurantMeta.put("attributes", Map.of(
+                        "is_halal_certified", request.getRestaurantData().isHalal(),
+                        "is_veg_only", request.getRestaurantData().isVegOnly(),
+                        "is_vegan_friendly", request.getRestaurantData().isVegan()
+                ));
+                restaurantMeta.put("specialties", new ArrayList<>());
+                restaurantMeta.put("tags", List.of("newly_added", "unverified"));
+
+                Restaurant restaurant = new Restaurant();
+                restaurant.setOwner(savedUser);
+                restaurant.setName(request.getRestaurantData().getRestaurantName());
+                restaurant.setCuisine(request.getRestaurantData().getCuisine());
+                restaurant.setAddress(request.getAddress());
+                restaurant.setCity(request.getRestaurantData().getCity());
+                restaurant.setState(request.getRestaurantData().getState());
+                restaurant.setPostalCode(request.getRestaurantData().getPostalCode());
+                restaurant.setLatitude(request.getRestaurantData().getLatitude());
+                restaurant.setLongitude(request.getRestaurantData().getLongitude());
+                restaurant.setIsActive(false); // requires admin approval
+                restaurant.setRestaurantMeta(restaurantMeta);
+
+                restaurantRepository.save(restaurant);
+            } else if (role.contains("admin")) {
+                user.setProfileJson(profileJson);
+                Users savedUser = userRepository.save(user);
+                userRepository.flush(); // Ensure ID is generated
+
+                Admin admin = new Admin();
+                admin.setUser(savedUser);
+                admin.setUsername(savedUser.getUsername());
+                admin.setFullName(savedUser.getFullName());
+                admin.setEmail(savedUser.getEmail());
+                admin.setPhone(savedUser.getPhone());
+                admin.setProfileJson(profileJson);
+                admin.setFullName(request.getFirstName().concat(" ").concat(request.getLastName()));
+                adminRepository.save(admin);
+
+            } else if (role.contains("delivery")) {
+                profileJson.put("vehicle_type", request.getDeliveryData().getVehicleType());
+                profileJson.put("service_area", request.getDeliveryData().getServiceAreaCity());
+                profileJson.put("verified_documents", new ArrayList<>());
+                profileJson.put("availability", true);
+                user.setProfileJson(profileJson);
+                userRepository.save(user);
+
+            } else { // default: ROLE_USER
+                user.setProfileJson(profileJson);
+                userRepository.save(user);
             }
 
-            if (signUpRequest.getRole().equals("admin")) {
-                //implement
-            }
-            return ResponseEntity.ok("Profile created successfully");
+            return ResponseEntity.ok(Map.of("message", "Profile created successfully"));
         } catch (Exception e) {
-            throw new RuntimeException("Error creating profile:");
+            throw new RuntimeException("Error creating profile: " + e.getMessage(), e);
         }
     }
-
     /**
      * Try to resolve the effective user id:
      * - If maybeUserIdFromParam != null => use it (for tests)
@@ -117,7 +186,7 @@ public class UserServiceImpl implements UserService{
 
         Map<String, Object> profile = u.getProfileJson() != null ? new HashMap<>(u.getProfileJson()) : new HashMap<>();
         List<Map<String, Object>> addresses = profile.containsKey("addresses") ?
-                new ArrayList<>((List<Map<String,Object>>) profile.get("addresses")) : new ArrayList<>();
+                new ArrayList<>((List<Map<String, Object>>) profile.get("addresses")) : new ArrayList<>();
 
         // generate id
         String id = "addr_" + UUID.randomUUID().toString().replace("-", "").substring(0, 8);
@@ -150,7 +219,7 @@ public class UserServiceImpl implements UserService{
         if (!profile.containsKey("addresses")) {
             throw new NotFoundException("Address not found");
         }
-        List<Map<String, Object>> addresses = new ArrayList<>((List<Map<String,Object>>) profile.get("addresses"));
+        List<Map<String, Object>> addresses = new ArrayList<>((List<Map<String, Object>>) profile.get("addresses"));
         boolean removed = addresses.removeIf(a -> addressId.equals(String.valueOf(a.get("id"))));
         if (!removed) throw new NotFoundException("Address not found");
         profile.put("addresses", addresses);

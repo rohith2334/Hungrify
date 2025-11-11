@@ -78,7 +78,7 @@ public class AuthServiceImpl implements AuthService {
                     break;
                 case "delivery":
                     final_role.set(ERole.ROLE_DELIVERY_AGENT);
-
+                    break;
                 case "restaurant":
                     final_role.set(ERole.ROLE_RESTAURANT);
                     break;
