@@ -16,7 +16,7 @@ import java.util.List;
  * DeliveryController — handles partner-side delivery operations.
  */
 @RestController
-@RequestMapping("/api/v1/deliveries")
+@RequestMapping("/deliveries")
 @RequiredArgsConstructor
 @Tag(name = "Deliveries", description = "Delivery partner endpoints")
 public class DeliveryController {

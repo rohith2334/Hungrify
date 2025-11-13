@@ -6,9 +6,9 @@ import com.app.hungrify.main.dto.cart.*;
  * Cart management service.
  */
 public interface CartService {
-    CartResponseDto getCart(Long userId);
-    CartResponseDto addToCart(Long userId, CartAddRequestDto request);
-    CartResponseDto removeFromCart(Long userId, CartRemoveRequestDto request);
-    void clearCart(Long userId);
-    CartResponseDto saveCart(Long userId);
+    CartResponseDto getCart();
+    CartResponseDto addToCart(CartAddRequestDto request);
+    CartResponseDto removeFromCart(CartRemoveRequestDto request);
+    void clearCart();
+    CartResponseDto saveCart();
 }

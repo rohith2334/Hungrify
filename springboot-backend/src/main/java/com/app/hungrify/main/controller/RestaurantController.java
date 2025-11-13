@@ -22,7 +22,7 @@ import java.util.List;
  * Path: /api/v1/restaurants
  */
 @RestController
-@RequestMapping("/api/v1/restaurants")
+@RequestMapping("/restaurants")
 @Validated
 @RequiredArgsConstructor
 @Tag(name = "Restaurant", description = "Restaurant profile, dashboard & alerts")
@@ -60,38 +60,35 @@ public class RestaurantController {
 
     @Operation(summary = "Restaurant dashboard",
             description = "GET /api/v1/restaurants/{restaurantId}/dashboard — dateFrom/to format yyyy-MM-dd")
-    @ApiResponses({ @ApiResponse(responseCode = "200", description = "OK") })
-    @GetMapping("/{restaurantId}/dashboard")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "OK")})
+    @GetMapping("/dashboard")
     public ResponseEntity<RestaurantDashboardResponseDto> dashboard(
-            @Parameter(description = "Restaurant id") @PathVariable("restaurantId") Long restaurantId,
             @Parameter(description = "Date from yyyy-MM-dd", example = "2025-11-01") @RequestParam(value = "date_from", required = false) String dateFrom,
             @Parameter(description = "Date to yyyy-MM-dd", example = "2025-11-04") @RequestParam(value = "date_to", required = false) String dateTo,
             @Parameter(description = "limit popular dishes") @RequestParam(value = "limit_popular", defaultValue = "5") int limitPopular) {
 
-        RestaurantDashboardResponseDto resp = restaurantService.getDashboard(restaurantId, dateFrom, dateTo, limitPopular);
+        RestaurantDashboardResponseDto resp = restaurantService.getDashboard(dateFrom, dateTo, limitPopular);
         return ResponseEntity.ok(resp);
     }
 
     @Operation(summary = "Recent alerts for restaurant")
-    @GetMapping("/{restaurantId}/alerts")
-    public ResponseEntity<List<AlertDto>> alerts(
-            @Parameter(description = "Restaurant id") @PathVariable("restaurantId") Long restaurantId) {
-        List<AlertDto> alerts = restaurantService.getAlerts(restaurantId);
+    @GetMapping("/alerts")
+    public ResponseEntity<List<AlertDto>> alerts() {
+        List<AlertDto> alerts = restaurantService.getAlerts();
         return ResponseEntity.ok(alerts);
     }
 
     @Operation(summary = "Update restaurant profile",
-            description = "PUT /api/v1/restaurants/{restaurantId}/profile — updates open hours and meta")
+            description = "PUT /api/v1/restaurants/profile — updates open hours and meta")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Updated"),
             @ApiResponse(responseCode = "404", description = "Not found"),
             @ApiResponse(responseCode = "400", description = "Validation error")
     })
-    @PutMapping("/{restaurantId}/profile")
+    @PutMapping("/profile")
     public ResponseEntity<RestaurantDetailDto> updateProfile(
-            @Parameter(description = "Restaurant id") @PathVariable("restaurantId") Long restaurantId,
             @Valid @RequestBody UpdateProfileRequestDto request) {
-        RestaurantDetailDto updated = restaurantService.updateProfile(restaurantId, request);
+        RestaurantDetailDto updated = restaurantService.updateProfile(request);
         return ResponseEntity.ok(updated);
     }
 }

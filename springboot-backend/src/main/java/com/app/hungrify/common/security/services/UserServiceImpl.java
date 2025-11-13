@@ -2,6 +2,7 @@ package com.app.hungrify.common.security.services;
 
 import com.app.hungrify.common.models.ERole;
 import com.app.hungrify.common.models.Users;
+import com.app.hungrify.common.payload.request.RestaurantData;
 import com.app.hungrify.common.payload.request.SignupRequest;
 import com.app.hungrify.common.repository.UserRepository;
 import com.app.hungrify.main.dto.user.AddAddressRequestDto;
@@ -11,6 +12,7 @@ import com.app.hungrify.main.exception.BadRequestException;
 import com.app.hungrify.main.exception.NotFoundException;
 import com.app.hungrify.main.models.Admin;
 import com.app.hungrify.main.models.Restaurant;
+import com.app.hungrify.main.models.meta.RestaurantMeta;
 import com.app.hungrify.main.repository.AdminRepository;
 import com.app.hungrify.main.repository.RestaurantRepository;
 import lombok.RequiredArgsConstructor;
@@ -44,7 +46,8 @@ public class UserServiceImpl implements UserService {
             user.setProfileImage(request.getProfileImage());
             user.setAddress(request.getAddress());
             user.setRoles(user.getRoles()); // store as string per schema
-
+            user.setVerified(true);
+            user.setActive(true);
             Map<String, Object> profileJson = new HashMap<>();
             String role = request.getRole().toLowerCase();
 
@@ -57,21 +60,25 @@ public class UserServiceImpl implements UserService {
                         "dashboard_view", "standard"
                 ));
                 user.setProfileJson(profileJson);
+                user.setVerified(false);
+                user.setActive(false);
                 Users savedUser = userRepository.save(user);
+                RestaurantData restaurantData = request.getRestaurantData();
+                RestaurantMeta restaurantMeta = new RestaurantMeta();
+                restaurantMeta.setDocuments(new ArrayList<>());
+                restaurantMeta.setRatingSummary(Map.of("avg_rating", 0, "reviews_count", 0));
+                restaurantMeta.setOpenHours(new ArrayList<>());
+                restaurantMeta.setAdminNote(null);
+                restaurantMeta.setIsCloudKitchen(restaurantData.getIsCloudKitchen());
+                restaurantMeta.setIsHalalCertified(restaurantData.getIsHalalCertified());
+                restaurantMeta.setIsPureVeg(restaurantData.getIsPureVeg());
+                restaurantMeta.setIsVeganFriendly(restaurantData.getIsVeganFriendly());
+                restaurantMeta.setIsGlutenFreeFriendly(restaurantData.getIsGlutenFreeFriendly());
+                restaurantData.setIsOrganicIngredients(restaurantData.getIsOrganicIngredients());
+                restaurantData.setIsNutFreeFriendly(restaurantData.getIsNutFreeFriendly());
 
-                Map<String, Object> restaurantMeta = new HashMap<>();
-                restaurantMeta.put("documents", new ArrayList<>());
-                restaurantMeta.put("rating_summary", Map.of("avg_rating", 0, "reviews_count", 0));
-                restaurantMeta.put("open_hours", new ArrayList<>());
-                restaurantMeta.put("admin_note", null);
-
-                restaurantMeta.put("attributes", Map.of(
-                        "is_halal_certified", request.getRestaurantData().isHalal(),
-                        "is_veg_only", request.getRestaurantData().isVegOnly(),
-                        "is_vegan_friendly", request.getRestaurantData().isVegan()
-                ));
-                restaurantMeta.put("specialties", new ArrayList<>());
-                restaurantMeta.put("tags", List.of("newly_added", "unverified"));
+                restaurantMeta.setSpecialties(new ArrayList<>());
+                restaurantMeta.setTags(List.of("newly_added", "unverified"));
 
                 Restaurant restaurant = new Restaurant();
                 restaurant.setOwner(savedUser);
@@ -84,14 +91,14 @@ public class UserServiceImpl implements UserService {
                 restaurant.setLatitude(request.getRestaurantData().getLatitude());
                 restaurant.setLongitude(request.getRestaurantData().getLongitude());
                 restaurant.setIsActive(false); // requires admin approval
-                restaurant.setRestaurantMeta(restaurantMeta);
+                restaurant.setRestaurantMeta((Map<String, Object>) restaurantMeta);
 
                 restaurantRepository.save(restaurant);
             } else if (role.contains("admin")) {
                 user.setProfileJson(profileJson);
+
                 Users savedUser = userRepository.save(user);
                 userRepository.flush(); // Ensure ID is generated
-
                 Admin admin = new Admin();
                 admin.setUser(savedUser);
                 admin.setUsername(savedUser.getUsername());
@@ -103,6 +110,7 @@ public class UserServiceImpl implements UserService {
                 adminRepository.save(admin);
 
             } else if (role.contains("delivery")) {
+
                 profileJson.put("vehicle_type", request.getDeliveryData().getVehicleType());
                 profileJson.put("service_area", request.getDeliveryData().getServiceAreaCity());
                 profileJson.put("verified_documents", new ArrayList<>());
@@ -112,6 +120,9 @@ public class UserServiceImpl implements UserService {
 
             } else { // default: ROLE_USER
                 user.setProfileJson(profileJson);
+
+
+
                 userRepository.save(user);
             }
 

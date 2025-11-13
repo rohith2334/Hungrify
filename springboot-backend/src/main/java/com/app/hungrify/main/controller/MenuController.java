@@ -18,10 +18,10 @@ import java.util.List;
 
 /**
  * MenuController
- * Path: /api/v1/restaurants/{restaurantId}/menu
+ * Path: /api/v1/restaurants/menu
  */
 @RestController
-@RequestMapping("/api/v1/restaurants/{restaurantId}/menu")
+@RequestMapping("/restaurants/menu")
 @Validated
 @RequiredArgsConstructor
 @Tag(name = "Menu", description = "Menu CRUD, low-stock, item details, parse-ingredients")
@@ -31,7 +31,7 @@ public class MenuController {
 
     @Operation(summary = "Get grouped menu for restaurant")
     @ApiResponses({ @ApiResponse(responseCode = "200", description = "OK") })
-    @GetMapping
+    @GetMapping("/{restaurantId}")
     public ResponseEntity<GroupedMenuResponseDto> getMenu(
             @Parameter(description = "Restaurant id") @PathVariable("restaurantId") Long restaurantId) {
         return ResponseEntity.ok(menuService.getGroupedMenu(restaurantId));
@@ -40,46 +40,43 @@ public class MenuController {
     @Operation(summary = "Get single item detail")
     @GetMapping("/items/{itemId}")
     public ResponseEntity<FoodItemDetailDto> getItem(
-            @Parameter(description = "Restaurant id") @PathVariable("restaurantId") Long restaurantId,
             @Parameter(description = "Item id") @PathVariable("itemId") Long itemId) {
-        return ResponseEntity.ok(menuService.getItemDetail(restaurantId, itemId));
+        return ResponseEntity.ok(menuService.getItemDetail(itemId));
     }
 
     @Operation(summary = "Create a menu item")
     @PostMapping("/items")
     public ResponseEntity<FoodItemDetailDto> createItem(
-            @Parameter(description = "Restaurant id") @PathVariable("restaurantId") Long restaurantId,
             @Valid @RequestBody CreateFoodItemRequestDto request) {
-        FoodItemDetailDto created = menuService.createItem(restaurantId, request);
+        FoodItemDetailDto created = menuService.createItem(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
     @Operation(summary = "Edit (replace) a menu item")
     @PutMapping("/items/{itemId}")
     public ResponseEntity<FoodItemDetailDto> updateItem(
-            @Parameter(description = "Restaurant id") @PathVariable("restaurantId") Long restaurantId,
             @Parameter(description = "Item id") @PathVariable("itemId") Long itemId,
             @Valid @RequestBody UpdateFoodItemRequestDto request) {
-        FoodItemDetailDto updated = menuService.updateItem(restaurantId, itemId, request);
+        FoodItemDetailDto updated = menuService.updateItem(itemId, request);
         return ResponseEntity.ok(updated);
     }
 
     @Operation(summary = "Inline update item (price/qty/availability)")
     @PatchMapping("/items/{itemId}")
     public ResponseEntity<FoodItemDetailDto> patchItem(
-            @Parameter(description = "Restaurant id") @PathVariable("restaurantId") Long restaurantId,
+
             @Parameter(description = "Item id") @PathVariable("itemId") Long itemId,
             @Valid @RequestBody PatchFoodItemRequestDto request) {
-        FoodItemDetailDto updated = menuService.patchItem(restaurantId, itemId, request);
+        FoodItemDetailDto updated = menuService.patchItem(itemId, request);
         return ResponseEntity.ok(updated);
     }
 
     @Operation(summary = "Soft delete item")
     @DeleteMapping("/items/{itemId}")
     public ResponseEntity<Void> deleteItem(
-            @Parameter(description = "Restaurant id") @PathVariable("restaurantId") Long restaurantId,
+
             @Parameter(description = "Item id") @PathVariable("itemId") Long itemId) {
-        menuService.softDeleteItem(restaurantId, itemId);
+        menuService.softDeleteItem(itemId);
         return ResponseEntity.noContent().build();
     }
 
@@ -93,8 +90,9 @@ public class MenuController {
     @Operation(summary = "Parse ingredients (mocked AI)")
     @PostMapping("/parse-ingredients")
     public ResponseEntity<ParseIngredientsResponseDto> parseIngredients(
-            @Parameter(description = "Restaurant id") @PathVariable("restaurantId") Long restaurantId,
+
             @Valid @RequestBody ParseIngredientsRequestDto request) {
-        return ResponseEntity.ok(menuService.parseIngredients(restaurantId, request));
+        return ResponseEntity.ok(menuService.parseIngredients(request));
     }
+
 }

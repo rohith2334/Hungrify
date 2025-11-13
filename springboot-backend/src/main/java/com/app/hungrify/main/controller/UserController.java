@@ -20,7 +20,7 @@ import java.util.Map;
  * Otherwise the controller attempts to resolve the authenticated user from SecurityContext.
  */
 @RestController
-@RequestMapping("/api/v1/users")
+@RequestMapping("/users")
 @Validated
 @RequiredArgsConstructor
 @Tag(name = "Users", description = "Profile, addresses and preferences")

@@ -35,15 +35,15 @@ public interface RestaurantService {
      * @param dateTo ISO date string optional
      * @param limitPopular number of popular dishes to return
      */
-    RestaurantDashboardResponseDto getDashboard(Long restaurantId, String dateFrom, String dateTo, int limitPopular);
+    RestaurantDashboardResponseDto getDashboard(String dateFrom, String dateTo, int limitPopular);
 
     /**
      * Compute alerts list for restaurant.
      */
-    List<AlertDto> getAlerts(Long restaurantId);
+    List<AlertDto> getAlerts();
 
     /**
      * Update restaurant profile.
      */
-    RestaurantDetailDto updateProfile(Long restaurantId, UpdateProfileRequestDto update);
+    RestaurantDetailDto updateProfile( UpdateProfileRequestDto update);
 }

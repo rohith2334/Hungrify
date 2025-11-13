@@ -15,7 +15,7 @@ import java.util.List;
  * AdminController — dashboard, user management, restaurant approvals, and order monitoring.
  */
 @RestController
-@RequestMapping("/api/v1/admin")
+@RequestMapping("/admin")
 @RequiredArgsConstructor
 @Tag(name = "Admin", description = "Admin dashboard and management APIs")
 public class AdminController {

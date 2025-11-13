@@ -20,7 +20,7 @@ public interface RestaurantRepository extends JpaRepository<Restaurant, Long> {
     Page<Restaurant> findByCityAndCuisine(@Param("city") String city, @Param("cuisine") String cuisine, Pageable pageable);
 
     // randomized sample when no filters - use native query for RAND (MySQL) or native dialect - I'll provide a native fallback
-    @Query(value = "SELECT * FROM restaurant WHERE is_active = true ORDER BY RAND() LIMIT :limit", nativeQuery = true)
+    @Query(value = "SELECT * FROM restaurants WHERE is_active = true ORDER BY RAND() LIMIT :limit", nativeQuery = true)
     List<Restaurant> findRandomActiveRestaurants(@Param("limit") int limit);
 
     List<Restaurant> findByCityIgnoreCase(String city);

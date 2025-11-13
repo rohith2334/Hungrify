@@ -43,7 +43,7 @@ public class SignupRequest {
 
     private RestaurantData restaurantData;
 
-private DeliveryData deliveryData;
+    private DeliveryData deliveryData;
 
 
 }

@@ -1,6 +1,7 @@
 package com.app.hungrify.main.service;
 
 
+import com.app.hungrify.common.repository.UserRepository;
 import com.app.hungrify.main.dto.menu.*;
 import com.app.hungrify.main.exception.BadRequestException;
 import com.app.hungrify.main.exception.NotFoundException;
@@ -9,6 +10,8 @@ import com.app.hungrify.main.repository.FoodItemIngredientRepository;
 import com.app.hungrify.main.repository.FoodItemProfileRepository;
 import com.app.hungrify.main.repository.FoodItemRepository;
 import com.app.hungrify.main.repository.IngredientRepository;
+import com.app.hungrify.main.repository.RestaurantRepository;
+import com.app.hungrify.main.util.CommonUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +28,9 @@ import java.math.BigDecimal;
 @RequiredArgsConstructor
 public class MenuServiceImpl implements MenuService {
 
+    private final CommonUtils commonUtils;
+    private final UserRepository userRepository;
+    private final com.app.hungrify.main.repository.RestaurantRepository restaurantRepository;
     private final FoodItemRepository foodItemRepository;
     private final FoodItemProfileRepository profileRepository;
     private final FoodItemIngredientRepository fiRepository;
@@ -50,8 +56,10 @@ public class MenuServiceImpl implements MenuService {
     }
 
     @Override
-    public FoodItemDetailDto getItemDetail(Long restaurantId, Long itemId) {
-        FoodItem item = foodItemRepository.findByItemIdAndRestaurant_RestaurantId(itemId, restaurantId)
+    public FoodItemDetailDto getItemDetail(Long itemId) {
+        Restaurant restaurant = getRestaurantByUserId();
+        Long restaurantIdResolved = restaurant.getRestaurantId();
+        FoodItem item = foodItemRepository.findByItemIdAndRestaurant_RestaurantId(itemId, restaurantIdResolved)
                 .orElseThrow(() -> new NotFoundException("Item not found"));
         FoodItemDetailDto dto = toDetail(item);
         // ingredients
@@ -66,15 +74,15 @@ public class MenuServiceImpl implements MenuService {
 
     @Override
     @Transactional
-    public FoodItemDetailDto createItem(Long restaurantId, CreateFoodItemRequestDto request) {
+    public FoodItemDetailDto createItem(CreateFoodItemRequestDto request) {
         // validation: canonical uniqueness
-        if (foodItemRepository.existsByCanonicalNameAndRestaurant_RestaurantId(request.getCanonicalName(), restaurantId)) {
+        Restaurant restaurant = getRestaurantByUserId();
+        Long restaurantIdResolved = restaurant.getRestaurantId();
+        if (foodItemRepository.existsByCanonicalNameAndRestaurant_RestaurantId(request.getCanonicalName(), restaurantIdResolved)) {
             throw new BadRequestException("canonicalName already exists for this restaurant");
         }
         FoodItem item = new FoodItem();
-        Restaurant r = new Restaurant();
-        r.setRestaurantId(restaurantId);
-        item.setRestaurant(r);
+        item.setRestaurant(restaurant);
         item.setCanonicalName(request.getCanonicalName());
         item.setDisplayName(request.getDisplayName());
         item.setShortDescription(request.getShortDescription());
@@ -130,13 +138,15 @@ public class MenuServiceImpl implements MenuService {
             }
         }
 
-        return getItemDetail(restaurantId, saved.getItemId());
+        return getItemDetail(saved.getItemId());
     }
 
     @Override
     @Transactional
-    public FoodItemDetailDto updateItem(Long restaurantId, Long itemId, UpdateFoodItemRequestDto request) {
-        FoodItem item = foodItemRepository.findByItemIdAndRestaurant_RestaurantId(itemId, restaurantId).orElseThrow(() -> new NotFoundException("Item not found"));
+    public FoodItemDetailDto updateItem(Long itemId, UpdateFoodItemRequestDto request) {
+        Restaurant restaurant = getRestaurantByUserId();
+        Long restaurantIdResolved = restaurant.getRestaurantId();
+        FoodItem item = foodItemRepository.findByItemIdAndRestaurant_RestaurantId(itemId, restaurantIdResolved).orElseThrow(() -> new NotFoundException("Item not found"));
         if (request.getCanonicalName() != null) item.setCanonicalName(request.getCanonicalName());
         if (request.getDisplayName() != null) item.setDisplayName(request.getDisplayName());
         if (request.getShortDescription() != null) item.setShortDescription(request.getShortDescription());
@@ -196,31 +206,37 @@ public class MenuServiceImpl implements MenuService {
             }
         }
 
-        return getItemDetail(restaurantId, itemId);
+        return getItemDetail(itemId);
     }
 
     @Override
     @Transactional
-    public FoodItemDetailDto patchItem(Long restaurantId, Long itemId, PatchFoodItemRequestDto request) {
-        FoodItem item = foodItemRepository.findByItemIdAndRestaurant_RestaurantId(itemId, restaurantId).orElseThrow(() -> new NotFoundException("Item not found"));
+    public FoodItemDetailDto patchItem(Long itemId, PatchFoodItemRequestDto request) {
+        Restaurant restaurant = getRestaurantByUserId();
+        Long restaurantIdResolved = restaurant.getRestaurantId();
+        FoodItem item = foodItemRepository.findByItemIdAndRestaurant_RestaurantId(itemId, restaurantIdResolved).orElseThrow(() -> new NotFoundException("Item not found"));
         if (request.getIsAvailable() != null) item.setIsAvailable(request.getIsAvailable());
         if (request.getQuantity() != null) item.setQuantity(request.getQuantity());
         if (request.getPrice() != null) item.setPrice(request.getPrice());
         foodItemRepository.save(item);
-        return getItemDetail(restaurantId, itemId);
+        return getItemDetail(itemId);
     }
 
     @Override
     @Transactional
-    public void softDeleteItem(Long restaurantId, Long itemId) {
-        FoodItem item = foodItemRepository.findByItemIdAndRestaurant_RestaurantId(itemId, restaurantId).orElseThrow(() -> new NotFoundException("Item not found"));
+    public void softDeleteItem(Long itemId) {
+        Restaurant restaurant = getRestaurantByUserId();
+        Long restaurantIdResolved = restaurant.getRestaurantId();
+        FoodItem item = foodItemRepository.findByItemIdAndRestaurant_RestaurantId(itemId, restaurantIdResolved).orElseThrow(() -> new NotFoundException("Item not found"));
         item.setIsAvailable(false);
         foodItemRepository.save(item);
     }
 
     @Override
     public List<LowStockDto> getLowStock(Long restaurantId) {
-        List<FoodItem> available = foodItemRepository.findAvailableByRestaurant(restaurantId);
+        Restaurant restaurant = getRestaurantByUserId();
+        Long restaurantIdResolved = restaurant.getRestaurantId();
+        List<FoodItem> available = foodItemRepository.findAvailableByRestaurant(restaurantIdResolved);
         List<LowStockDto> result = new ArrayList<>();
         for (FoodItem f : available) {
             int q = f.getQuantity() == null ? 0 : f.getQuantity();
@@ -238,7 +254,7 @@ public class MenuServiceImpl implements MenuService {
     }
 
     @Override
-    public ParseIngredientsResponseDto parseIngredients(Long restaurantId, ParseIngredientsRequestDto request) {
+    public ParseIngredientsResponseDto parseIngredients(ParseIngredientsRequestDto request) {
         // Mocked parser: split commas, normalize (trim/lowercase), attempt to match existing Ingredient rows.
         String input = request.getText();
         String[] parts = input.split(",");
@@ -320,5 +336,11 @@ public class MenuServiceImpl implements MenuService {
     private String capitalize(String s) {
         if (s == null || s.isEmpty()) return s;
         return s.substring(0, 1).toUpperCase() + s.substring(1);
+    }
+
+    private Restaurant getRestaurantByUserId() {
+        Long userId = commonUtils.getUserId();
+        return restaurantRepository.findByOwner_UserId(userId)
+                .orElseThrow(() -> new NotFoundException("Restaurant not found for user: " + userId));
     }
 }

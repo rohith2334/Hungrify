@@ -5,6 +5,7 @@ import com.app.hungrify.common.repository.UserRepository;
 import com.app.hungrify.main.dto.cart.*;
 import com.app.hungrify.main.exception.BadRequestException;
 import com.app.hungrify.main.exception.NotFoundException;
+import com.app.hungrify.main.util.CommonUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -22,10 +23,12 @@ public class CartServiceImpl implements CartService {
 
     private final UserRepository userRepository;
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private final CommonUtils commonUtils;
 
     @Override
     @Transactional(readOnly = true)
-    public CartResponseDto getCart(Long userId) {
+    public CartResponseDto getCart() {
+        Long userId = getUserId();
         Users user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User not found"));
 
@@ -39,7 +42,8 @@ public class CartServiceImpl implements CartService {
 
     @Override
     @Transactional
-    public CartResponseDto addToCart(Long userId, CartAddRequestDto request) {
+    public CartResponseDto addToCart( CartAddRequestDto request) {
+        Long userId = getUserId();
         Users user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User not found"));
 
@@ -83,7 +87,8 @@ public class CartServiceImpl implements CartService {
 
     @Override
     @Transactional
-    public CartResponseDto removeFromCart(Long userId, CartRemoveRequestDto request) {
+    public CartResponseDto removeFromCart( CartRemoveRequestDto request) {
+        Long userId= getUserId();
         Users user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User not found"));
 
@@ -118,7 +123,8 @@ public class CartServiceImpl implements CartService {
 
     @Override
     @Transactional
-    public void clearCart(Long userId) {
+    public void clearCart() {
+        Long userId = getUserId();
         Users user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User not found"));
         Map<String, Object> profile = user.getProfileJson() != null ? user.getProfileJson() : new HashMap<>();
@@ -129,9 +135,9 @@ public class CartServiceImpl implements CartService {
 
     @Override
     @Transactional
-    public CartResponseDto saveCart(Long userId) {
+    public CartResponseDto saveCart() {
         // For now, just return current cart
-        return getCart(userId);
+        return getCart();
     }
 
     private void updateTotals(CartResponseDto cart) {
@@ -154,5 +160,9 @@ public class CartServiceImpl implements CartService {
                 .subtotal(BigDecimal.ZERO)
                 .totalItems(0)
                 .build();
+    }
+
+    private Long getUserId(){
+        return commonUtils.getUserId();
     }
 }

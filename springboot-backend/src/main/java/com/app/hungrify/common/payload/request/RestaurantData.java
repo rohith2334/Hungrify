@@ -21,7 +21,11 @@ public class RestaurantData {
     private BigDecimal longitude;
     private String openHours;
     //ai filters
-    private boolean isHalal;
-    private boolean isVegOnly;
-    private boolean isVegan;
+    private Boolean isPureVeg;
+    private Boolean isVeganFriendly;
+    private Boolean isGlutenFreeFriendly;
+    private Boolean isHalalCertified;
+    private Boolean isCloudKitchen;
+    private Boolean isOrganicIngredients;
+    private Boolean isNutFreeFriendly;
 }

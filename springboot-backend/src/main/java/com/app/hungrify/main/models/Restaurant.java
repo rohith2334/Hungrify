@@ -72,5 +72,6 @@ public class Restaurant {
 
     // convenience - back reference
     @OneToMany(mappedBy = "restaurant", fetch = FetchType.LAZY)
+    @ToString.Exclude
     private List<FoodItem> foodItems;
 }

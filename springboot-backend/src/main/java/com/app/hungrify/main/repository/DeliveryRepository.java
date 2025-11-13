@@ -15,6 +15,7 @@ public interface DeliveryRepository extends JpaRepository<Delivery, Long> {
     @Query("SELECT d FROM Delivery d WHERE d.order.restaurant.restaurantId = :restaurantId AND d.status IN :statuses")
     List<Delivery> findByRestaurantAndStatuses(@Param("restaurantId") Long restaurantId, @Param("statuses") List<Delivery.DeliveryStatus> statuses);
 
+    Optional<Delivery> findByOrder_OrderId(Long orderId);
     // pending pickups count
     @Query("SELECT COUNT(d) FROM Delivery d WHERE d.order.restaurant.restaurantId = :restaurantId AND d.status = com.app.hungrify.main.models.Delivery$DeliveryStatus.assigned")
     Long countAssignedByRestaurant(@Param("restaurantId") Long restaurantId);

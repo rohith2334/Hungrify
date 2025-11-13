@@ -5,6 +5,7 @@ import com.app.hungrify.main.dto.resturant.*;
 import com.app.hungrify.main.exception.NotFoundException;
 import com.app.hungrify.main.models.*;
 import com.app.hungrify.main.repository.*;
+import com.app.hungrify.main.util.CommonUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,6 +27,7 @@ public class RestaurantServiceImpl implements RestaurantService {
     private final OrderItemRepository orderItemRepository;
     private final FoodItemRepository foodItemRepository;
     private final DeliveryRepository deliveryRepository;
+    private final CommonUtils commonUtils;
 
     @Override
     public PagedRestaurantsResponseDto discoverRestaurants(String city, String cuisine, int page, int limit) {
@@ -49,13 +51,13 @@ public class RestaurantServiceImpl implements RestaurantService {
     }
 
     @Override
-    public RestaurantDashboardResponseDto getDashboard(Long restaurantId, String dateFrom, String dateTo, int limitPopular) {
+    public RestaurantDashboardResponseDto getDashboard(String dateFrom, String dateTo, int limitPopular) {
         // parse dates or set defaults
         LocalDate fromDate = (dateFrom == null) ? LocalDate.now().minusDays(7) : LocalDate.parse(dateFrom);
         LocalDate toDate = (dateTo == null) ? LocalDate.now() : LocalDate.parse(dateTo);
         Instant from = fromDate.atStartOfDay(ZoneOffset.UTC).toInstant();
         Instant to = toDate.plusDays(1).atStartOfDay(ZoneOffset.UTC).toInstant();
-
+        Long restaurantId= getRestaurantByUserId().getRestaurantId();
         // KPIs
         Long todayOrders = orderRepository.countByRestaurantAndCreatedAtBetween(restaurantId, from, to);
         BigDecimal periodRevenue = orderRepository.sumTotalAmountByRestaurantAndCreatedAtBetween(restaurantId, from, to);
@@ -168,7 +170,8 @@ public class RestaurantServiceImpl implements RestaurantService {
     }
 
     @Override
-    public List<AlertDto> getAlerts(Long restaurantId) {
+    public List<AlertDto> getAlerts() {
+        Long restaurantId = getRestaurantByUserId().getRestaurantId();
         List<AlertDto> alerts = new ArrayList<>();
 
         // low stock alerts
@@ -190,7 +193,8 @@ public class RestaurantServiceImpl implements RestaurantService {
 
     @Override
     @Transactional
-    public RestaurantDetailDto updateProfile(Long restaurantId, UpdateProfileRequestDto update) {
+    public RestaurantDetailDto updateProfile(UpdateProfileRequestDto update) {
+        Long restaurantId = getRestaurantByUserId().getRestaurantId();
         Restaurant r = restaurantRepository.findById(restaurantId).orElseThrow(() -> new NotFoundException("Restaurant not found: " + restaurantId));
         if (update.getName() != null) r.setName(update.getName());
         if (update.getAddress() != null) r.setAddress(update.getAddress());
@@ -239,5 +243,11 @@ public class RestaurantServiceImpl implements RestaurantService {
         if (phone == null) return null;
         if (phone.length() <= 4) return "****";
         return phone.charAt(0) + "*****" + phone.substring(Math.max(1, phone.length()-2));
+    }
+
+    private Restaurant getRestaurantByUserId() {
+        Long userId = commonUtils.getUserId();
+        return restaurantRepository.findByOwner_UserId(userId)
+                .orElseThrow(() -> new NotFoundException("Restaurant not found for user: " + userId));
     }
 }

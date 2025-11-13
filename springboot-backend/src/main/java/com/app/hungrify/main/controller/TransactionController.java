@@ -15,7 +15,7 @@ import java.util.List;
  * Admin Transaction Controller — payment logs overview and management.
  */
 @RestController
-@RequestMapping("/api/v1/admin/transactions")
+@RequestMapping("/admin/transactions")
 @RequiredArgsConstructor
 @Validated
 @Tag(name = "Admin - Transactions", description = "View and manage payment transactions")

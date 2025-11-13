@@ -3,6 +3,7 @@ package com.app.hungrify.main.dto.order;
 import lombok.*;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Response for order status + timestamps.
@@ -13,7 +14,11 @@ import java.util.List;
 @AllArgsConstructor
 public class OrderStatusResponseDto {
     private Long orderId;
-    private String currentStatus;
-    private List<StatusHistoryDto> history;
-    private Instant lastUpdated;
+    private String status;
+    private String paymentStatus;
+    private Long restaurantId;
+    private Long deliveryId;
+    private Map<String, Instant> statusTimestamps;
+    private Instant updatedAt;
+    private String note;
 }
