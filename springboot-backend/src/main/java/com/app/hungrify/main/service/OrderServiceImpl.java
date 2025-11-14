@@ -10,6 +10,7 @@ import com.app.hungrify.main.repository.DeliveryRepository;
 import com.app.hungrify.main.repository.FoodItemRepository;
 import com.app.hungrify.main.repository.OrderRepository;
 import com.app.hungrify.main.repository.RestaurantRepository;
+import com.app.hungrify.main.util.CommonUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,10 +30,12 @@ public class OrderServiceImpl implements OrderService {
     private final DeliveryRepository deliveryRepository;
     private final UserRepository userRepository;
     private final FoodItemRepository foodItemRepository;
+    private final CommonUtils commonUtils;
 
 
     @Override
-    public List<OrderSummaryDto> listUserOrders(Long userId) {
+    public List<OrderSummaryDto> listUserOrders() {
+        Long userId = getCurrentUserId();
         return orderRepository.findByUser_UserIdOrderByCreatedAtDesc(userId)
                 .stream().map(o -> OrderSummaryDto.builder()
                         .orderId(o.getOrderId())
@@ -266,4 +269,9 @@ public class OrderServiceImpl implements OrderService {
 //            foodItemRepository.save(foodItem);
 //        }
     }
+
+    public Long getCurrentUserId() {
+        return commonUtils.getUserId();
+    }
+
 }

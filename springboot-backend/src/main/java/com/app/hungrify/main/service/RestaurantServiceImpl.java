@@ -1,6 +1,7 @@
 package com.app.hungrify.main.service;
 
 
+import com.app.hungrify.main.dto.order.OrderSummaryDto;
 import com.app.hungrify.main.dto.resturant.*;
 import com.app.hungrify.main.exception.NotFoundException;
 import com.app.hungrify.main.models.*;
@@ -10,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.data.domain.*;
+
 import java.util.*;
 import java.util.stream.*;
 import java.time.*;
@@ -37,7 +39,7 @@ public class RestaurantServiceImpl implements RestaurantService {
             List<RestaurantSummaryDto> items = sample.stream().map(this::toSummary).collect(Collectors.toList());
             return PagedRestaurantsResponseDto.builder().page(1).limit(limit).totalEstimate((long) items.size()).items(items).build();
         } else {
-            Pageable pageable = PageRequest.of(Math.max(0, page-1), limit);
+            Pageable pageable = PageRequest.of(Math.max(0, page - 1), limit);
             Page<Restaurant> p = restaurantRepository.findByCityAndCuisine(city, cuisine, pageable);
             List<RestaurantSummaryDto> items = p.getContent().stream().map(this::toSummary).collect(Collectors.toList());
             return PagedRestaurantsResponseDto.builder().page(page).limit(limit).totalEstimate(p.getTotalElements()).items(items).build();
@@ -57,7 +59,7 @@ public class RestaurantServiceImpl implements RestaurantService {
         LocalDate toDate = (dateTo == null) ? LocalDate.now() : LocalDate.parse(dateTo);
         Instant from = fromDate.atStartOfDay(ZoneOffset.UTC).toInstant();
         Instant to = toDate.plusDays(1).atStartOfDay(ZoneOffset.UTC).toInstant();
-        Long restaurantId= getRestaurantByUserId().getRestaurantId();
+        Long restaurantId = getRestaurantByUserId().getRestaurantId();
         // KPIs
         Long todayOrders = orderRepository.countByRestaurantAndCreatedAtBetween(restaurantId, from, to);
         BigDecimal periodRevenue = orderRepository.sumTotalAmountByRestaurantAndCreatedAtBetween(restaurantId, from, to);
@@ -93,13 +95,13 @@ public class RestaurantServiceImpl implements RestaurantService {
                 .build();
 
         // current orders (take top 5)
-        Page<Order> recentOrdersPage = orderRepository.findRecentByRestaurant(restaurantId, PageRequest.of(0,5));
+        Page<Order> recentOrdersPage = orderRepository.findRecentByRestaurant(restaurantId, PageRequest.of(0, 5));
         List<DashboardCurrentOrderDto> currentOrders = recentOrdersPage.getContent().stream().map(o ->
                 DashboardCurrentOrderDto.builder()
                         .orderId(o.getOrderId())
                         .status(o.getStatus().name())
                         .createdAt(o.getCreatedAt())
-                        .estimatedReadyInMinutes( (o.getCreatedAt() == null) ? null : 20 ) // placeholder
+                        .estimatedReadyInMinutes((o.getCreatedAt() == null) ? null : 20) // placeholder
                         .orderItemsCount(o.getItems() == null ? 0 : o.getItems().size())
                         .totalAmount(o.getTotalAmount())
                         .customer(Map.of("user_id", o.getUser().getUserId(), "masked_phone", maskPhone(o.getUser().getPhone()), "last_order_count", 1))
@@ -108,9 +110,9 @@ public class RestaurantServiceImpl implements RestaurantService {
         // popular dishes
         List<java.util.Map<String, Object>> popularRaw = orderItemRepository.findPopularDishesByRestaurant(restaurantId, PageRequest.of(0, limitPopular));
         List<PopularDishDto> popularDishes = popularRaw.stream().map(map -> PopularDishDto.builder()
-                .itemId(((Number)map.get("itemId")).longValue())
-                .displayName((String)map.get("displayName"))
-                .timesOrdered(((Number)map.get("timesOrdered")).intValue())
+                .itemId(((Number) map.get("itemId")).longValue())
+                .displayName((String) map.get("displayName"))
+                .timesOrdered(((Number) map.get("timesOrdered")).intValue())
                 .revenue((BigDecimal) map.getOrDefault("revenue", BigDecimal.ZERO))
                 .imageUrls(Collections.emptyList())
                 .build()).collect(Collectors.toList());
@@ -120,7 +122,7 @@ public class RestaurantServiceImpl implements RestaurantService {
         List<InventoryLowDto> inventoryLow = available.stream()
                 .filter(fi -> {
                     Integer q = fi.getQuantity() == null ? 0 : fi.getQuantity();
-                    Integer threshold =  (fi.getPrepTimeMinutes() == null) ? 0 : 0; // placeholder; schema uses threshold in profile? We check quantity <= 5 as fallback
+                    Integer threshold = (fi.getPrepTimeMinutes() == null) ? 0 : 0; // placeholder; schema uses threshold in profile? We check quantity <= 5 as fallback
                     return q <= 5;
                 })
                 .map(fi -> InventoryLowDto.builder()
@@ -207,6 +209,24 @@ public class RestaurantServiceImpl implements RestaurantService {
         return toDetail(saved);
     }
 
+    @Override
+    public List<OrderSummaryDto> listRestaurantOrders() {
+        Long restaurantId = getRestaurantByUserId().getRestaurantId();
+        List<Order> orders = orderRepository.findAll().stream()
+                .filter(o -> o.getRestaurant() != null && o.getRestaurant().getRestaurantId().equals(restaurantId))
+                .sorted(Comparator.comparing(Order::getCreatedAt).reversed())
+                .collect(Collectors.toList());
+
+        return orders.stream().map(o -> OrderSummaryDto.builder()
+                .orderId(o.getOrderId())
+                .restaurantId(restaurantId)
+                .restaurantName(o.getRestaurant().getName())
+                .totalAmount(o.getTotalAmount())
+                .status(o.getStatus().name())
+                .createdAt(o.getCreatedAt())
+                .build()).collect(Collectors.toList());
+    }
+
     // helper mappers
     private RestaurantSummaryDto toSummary(Restaurant r) {
         return RestaurantSummaryDto.builder()
@@ -242,7 +262,7 @@ public class RestaurantServiceImpl implements RestaurantService {
     private String maskPhone(String phone) {
         if (phone == null) return null;
         if (phone.length() <= 4) return "****";
-        return phone.charAt(0) + "*****" + phone.substring(Math.max(1, phone.length()-2));
+        return phone.charAt(0) + "*****" + phone.substring(Math.max(1, phone.length() - 2));
     }
 
     private Restaurant getRestaurantByUserId() {

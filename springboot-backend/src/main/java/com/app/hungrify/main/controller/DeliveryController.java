@@ -54,8 +54,8 @@ public class DeliveryController {
 
     @Operation(summary = "List delivery history for partner")
     @GetMapping("/history")
-    public ResponseEntity<List<DeliverySummaryDto>> getHistory(@RequestParam Long partnerUserId) {
-        return ResponseEntity.ok(deliveryService.getHistory(partnerUserId));
+    public ResponseEntity<List<DeliverySummaryDto>> getHistory() {
+        return ResponseEntity.ok(deliveryService.getHistory());
     }
 
     @Operation(summary = "Fetch partner's earnings summary")

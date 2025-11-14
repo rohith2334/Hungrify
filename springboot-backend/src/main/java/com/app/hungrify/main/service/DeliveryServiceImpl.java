@@ -106,12 +106,14 @@ public class DeliveryServiceImpl implements DeliveryService {
         order.setOrderMeta(orderMeta); // keep this if other meta updates are needed
         orderRepository.save(order);
 
+
         return new DeliveryActionResponseDto(d.getDeliveryId(), "delivered", "Delivery completed successfully");
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<DeliverySummaryDto> getHistory(Long partnerUserId) {
+    public List<DeliverySummaryDto> getHistory() {
+        Long partnerUserId = getLoggedInDeliveryPartnerId();
         List<Delivery> list = deliveryRepository.findByPartnerUser_UserIdAndStatusIn(
                 partnerUserId,
                 List.of(Delivery.DeliveryStatus.delivered, Delivery.DeliveryStatus.cancelled)

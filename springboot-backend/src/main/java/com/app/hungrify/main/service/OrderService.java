@@ -8,7 +8,7 @@ import java.util.List;
  * Service for fetching and managing orders.
  */
 public interface OrderService {
-    List<OrderSummaryDto> listUserOrders(Long userId);
+    List<OrderSummaryDto> listUserOrders();
     OrderDetailDto getOrderDetail(Long orderId);
     OrderStatusResponseDto getOrderStatus(Long orderId);
     OrderStatusResponseDto updateOrderStatus(Long orderId, OrderStatusUpdateRequestDto request);

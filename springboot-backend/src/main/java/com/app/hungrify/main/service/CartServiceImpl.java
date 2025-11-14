@@ -54,7 +54,8 @@ public class CartServiceImpl implements CartService {
 
         // Single restaurant constraint
         if (cart.getRestaurantId() != null && !cart.getRestaurantId().equals(request.getRestaurantId())) {
-            throw new BadRequestException("Cart already contains items from another restaurant");
+//            throw new BadRequestException("Cart already contains items from another restaurant");
+            clearCart();
         }
 
         cart.setRestaurantId(request.getRestaurantId());

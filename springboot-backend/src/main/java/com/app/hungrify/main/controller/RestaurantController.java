@@ -1,6 +1,7 @@
 package com.app.hungrify.main.controller;
 
 
+import com.app.hungrify.main.dto.order.OrderSummaryDto;
 import com.app.hungrify.main.dto.resturant.*;
 import com.app.hungrify.main.service.RestaurantService;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -90,5 +91,19 @@ public class RestaurantController {
             @Valid @RequestBody UpdateProfileRequestDto request) {
         RestaurantDetailDto updated = restaurantService.updateProfile(request);
         return ResponseEntity.ok(updated);
+    }
+
+    // /api/v1/restaurants/{restaurantId}/orders — List orders for restaurant
+    @Operation(summary = "List orders for restaurant",
+            description = "GET /api/v1/restaurants/{restaurantId}/orders — List orders for restaurant")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "OK"),
+            @ApiResponse(responseCode = "404", description = "Not found")
+    })
+    @GetMapping("/orders")
+    public ResponseEntity<List<OrderSummaryDto>> listRestaurantOrders(
+    ) {
+        List<OrderSummaryDto> orders = restaurantService.listRestaurantOrders();
+        return ResponseEntity.ok(orders);
     }
 }

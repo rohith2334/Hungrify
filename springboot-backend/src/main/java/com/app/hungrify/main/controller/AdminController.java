@@ -1,6 +1,7 @@
 package com.app.hungrify.main.controller;
 
 
+import com.app.hungrify.common.models.ERole;
 import com.app.hungrify.main.dto.admin.*;
 import com.app.hungrify.main.service.AdminService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -25,8 +26,8 @@ public class AdminController {
     @Operation(summary = "Fetch admin dashboard analytics")
     @GetMapping("/dashboard")
     public ResponseEntity<DashboardResponseDto> getDashboard(
-            @RequestParam String dateFrom,
-            @RequestParam String dateTo) {
+            @RequestParam(required = false) String dateFrom,
+            @RequestParam(required = false) String dateTo) {
         return ResponseEntity.ok(adminService.getDashboard(dateFrom, dateTo));
     }
 
@@ -90,5 +91,24 @@ public class AdminController {
     @GetMapping("/orders/{orderId}")
     public ResponseEntity<AdminOrderDetailDto> getOrderDetail(@PathVariable Long orderId) {
         return ResponseEntity.ok(adminService.getOrderDetail(orderId));
+    }
+
+    // GET /api/v1/admin/delivery-staff
+    @Operation(summary = "List all delivery staff")
+    @GetMapping("/delivery-staff")
+    public ResponseEntity<List<AdminUserSummaryDto>> listDeliveryStaff(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "20") int limit) {
+        return ResponseEntity.ok(adminService.listUsers(ERole.ROLE_DELIVERY_AGENT.name(), page, limit));
+    }
+
+    // Request: GET /api/v1/admin/transactions?status=success&page=1&limit=20
+    @Operation(summary = "List all transactions with optional status filter")
+    @GetMapping("/transactions")
+    public ResponseEntity<List<AdminTransactionDto>> listTransactions(
+            @RequestParam(required = false) String status,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "20") int limit) {
+        return ResponseEntity.ok(adminService.listTransactions(status, page, limit));
     }
 }

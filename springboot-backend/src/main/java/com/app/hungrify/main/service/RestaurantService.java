@@ -1,6 +1,7 @@
 package com.app.hungrify.main.service;
 
 
+import com.app.hungrify.main.dto.order.OrderSummaryDto;
 import com.app.hungrify.main.dto.resturant.*;
 
 import java.util.List;
@@ -46,4 +47,6 @@ public interface RestaurantService {
      * Update restaurant profile.
      */
     RestaurantDetailDto updateProfile( UpdateProfileRequestDto update);
+
+    List<OrderSummaryDto> listRestaurantOrders();
 }

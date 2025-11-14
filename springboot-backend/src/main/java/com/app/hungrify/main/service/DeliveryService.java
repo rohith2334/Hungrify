@@ -11,7 +11,7 @@ public interface DeliveryService {
     DeliveryActionResponseDto acceptOrDecline(Long deliveryId, Long partnerUserId, AcceptDeliveryRequestDto request);
     DeliveryActionResponseDto confirmPickup(Long deliveryId);
     DeliveryActionResponseDto markDelivered(Long deliveryId);
-    List<DeliverySummaryDto> getHistory(Long partnerUserId);
+    List<DeliverySummaryDto> getHistory();
     EarningsSummaryDto getEarnings(Long partnerUserId);
     DeliveryDetailDto getDeliveryDetail(Long deliveryId);
 }

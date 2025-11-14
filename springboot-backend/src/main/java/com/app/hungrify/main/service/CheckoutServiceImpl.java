@@ -100,6 +100,8 @@ public class CheckoutServiceImpl implements CheckoutService {
 
         orderItemRepository.saveAll(orderItems);
 
+        cartService.clearCart();
+
         // Return full detail DTO
         return OrderDetailDto.builder()
                 .orderId(saved.getOrderId())

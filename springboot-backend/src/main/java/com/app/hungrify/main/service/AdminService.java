@@ -15,4 +15,6 @@ public interface AdminService {
 
     List<AdminOrderSummaryDto> listOrders(String status, int page, int limit);
     AdminOrderDetailDto getOrderDetail(Long orderId);
+
+    List<AdminTransactionDto> listTransactions(String status, int page, int limit);
 }

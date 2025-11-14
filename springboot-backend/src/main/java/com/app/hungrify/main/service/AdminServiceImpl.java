@@ -32,6 +32,12 @@ public class AdminServiceImpl implements AdminService {
     @Override
     @Transactional(readOnly = true)
     public DashboardResponseDto getDashboard(String dateFrom, String dateTo) {
+        if (dateFrom == null || dateFrom.isEmpty()) {
+            dateFrom = LocalDate.now().minusDays(30).toString();
+        }
+        if (dateTo == null || dateTo.isEmpty()) {
+            dateTo = LocalDate.now().toString();
+        }
         LocalDate from = LocalDate.parse(dateFrom);
         LocalDate to = LocalDate.parse(dateTo);
 
@@ -71,6 +77,7 @@ public class AdminServiceImpl implements AdminService {
     public List<AdminUserSummaryDto> listUsers(String role, int page, int limit) {
         Pageable pageable = PageRequest.of(page - 1, limit, Sort.by("createdAt").descending());
         return userRepository.findAll(pageable).stream()
+                .filter(users -> users.getRoles() != ERole.ROLE_ADMIN) // Exclude admins
                 .filter(u -> role == null ||
                         (u.getRoles() != null && u.getRoles().name().equalsIgnoreCase(role))).map(u -> AdminUserSummaryDto.builder()
                         .userId(u.getUserId())
@@ -202,6 +209,12 @@ public class AdminServiceImpl implements AdminService {
                 .paymentMeta(o.getPaymentMeta())
                 .createdAt(o.getCreatedAt())
                 .build();
+    }
+
+    @Override
+    public List<AdminTransactionDto> listTransactions(String status, int page, int limit) {
+        Pageable pageable = PageRequest.of(page - 1, limit, Sort.by("createdAt").descending());
+        return Collections.emptyList(); // Placeholder for actual transaction fetching logic
     }
 
     private String maskPhone(String phone) {

@@ -33,8 +33,8 @@ public class OrderController {
 
     @Operation(summary = "List all orders for a user")
     @GetMapping
-    public ResponseEntity<List<OrderSummaryDto>> listUserOrders(@RequestParam Long userId) {
-        return ResponseEntity.ok(orderService.listUserOrders(userId));
+    public ResponseEntity<List<OrderSummaryDto>> listUserOrders() {
+        return ResponseEntity.ok(orderService.listUserOrders());
     }
 
     @Operation(summary = "Fetch full order details")
@@ -42,6 +42,9 @@ public class OrderController {
     public ResponseEntity<OrderDetailDto> getOrderDetail(@PathVariable Long orderId) {
         return ResponseEntity.ok(orderService.getOrderDetail(orderId));
     }
+
+
+
 
     @Operation(summary = "Fetch order status timeline")
     @GetMapping("/{orderId}/status")
