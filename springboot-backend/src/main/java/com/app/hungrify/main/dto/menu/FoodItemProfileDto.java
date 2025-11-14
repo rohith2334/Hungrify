@@ -2,6 +2,7 @@ package com.app.hungrify.main.dto.menu;
 
 import lombok.*;
 import java.math.BigDecimal;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -23,5 +24,5 @@ public class FoodItemProfileDto {
     private String spiceLevel;
     private List<String> allergens;
     private List<String> tags;
-    private Map<String, Object> tasteProfile;
+    private TasteProfile tasteProfile;
 }

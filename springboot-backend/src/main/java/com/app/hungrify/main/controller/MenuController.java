@@ -89,7 +89,7 @@ public class MenuController {
 
     @Operation(summary = "Parse ingredients (mocked AI)")
     @PostMapping("/parse-ingredients")
-    public ResponseEntity<ParseIngredientsResponseDto> parseIngredients(
+    public ResponseEntity<CreateFoodItemRequestDto> parseIngredients(
 
             @Valid @RequestBody ParseIngredientsRequestDto request) {
         return ResponseEntity.ok(menuService.parseIngredients(request));

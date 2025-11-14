@@ -1,5 +1,6 @@
 package com.app.hungrify.main.dto.menu;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.*;
 import javax.validation.constraints.*;
 import java.math.BigDecimal;
@@ -43,4 +44,13 @@ public class CreateFoodItemRequestDto {
     private FoodItemProfileDto profile;
 
     private List<CreateIngredientDto> ingredients;
+
+    public static CreateFoodItemRequestDto fromJson(String json) {
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            return mapper.readValue(json, CreateFoodItemRequestDto.class);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to parse JSON", e);
+        }
+    }
 }

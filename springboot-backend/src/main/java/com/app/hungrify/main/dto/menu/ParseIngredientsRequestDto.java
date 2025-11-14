@@ -12,9 +12,11 @@ import javax.validation.constraints.*;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ParseIngredientsRequestDto {
-    @NotNull
-    @Size(min = 1)
-    private String text;
 
-    private String itemHint;
+    private String shortDescription;
+
+    @NotNull
+    private String itemName;
+
+    private String category;
 }

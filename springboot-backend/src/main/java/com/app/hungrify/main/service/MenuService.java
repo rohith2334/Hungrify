@@ -50,5 +50,5 @@ public interface MenuService {
     /**
      * Mock parse-ingredients; returns suggested normalized ingredient objects and allergens.
      */
-    ParseIngredientsResponseDto parseIngredients(ParseIngredientsRequestDto request);
+    CreateFoodItemRequestDto parseIngredients(ParseIngredientsRequestDto request);
 }

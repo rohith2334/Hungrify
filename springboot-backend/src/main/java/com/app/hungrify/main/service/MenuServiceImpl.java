@@ -11,11 +11,13 @@ import com.app.hungrify.main.repository.FoodItemProfileRepository;
 import com.app.hungrify.main.repository.FoodItemRepository;
 import com.app.hungrify.main.repository.IngredientRepository;
 import com.app.hungrify.main.repository.RestaurantRepository;
+import com.app.hungrify.main.template.PromptTemplate;
 import com.app.hungrify.main.util.CommonUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.stream.*;
 import java.time.Instant;
@@ -35,6 +37,7 @@ public class MenuServiceImpl implements MenuService {
     private final FoodItemProfileRepository profileRepository;
     private final FoodItemIngredientRepository fiRepository;
     private final IngredientRepository ingredientRepository;
+    private final PromptTemplate promptTemplate;
 
     @Override
     public GroupedMenuResponseDto getGroupedMenu(Long restaurantId) {
@@ -109,7 +112,7 @@ public class MenuServiceImpl implements MenuService {
             profile.setSpiceLevel(p.getSpiceLevel() == null ? null : FoodItemProfile.SpiceLevel.valueOf(p.getSpiceLevel().toLowerCase()));
             profile.setAllergens(p.getAllergens());
             profile.setTags(p.getTags());
-            profile.setTasteProfile(p.getTasteProfile());
+            profile.setTasteProfile( p.getTasteProfile().toMap());
             profileRepository.save(profile);
         }
 
@@ -176,7 +179,7 @@ public class MenuServiceImpl implements MenuService {
             if (p.getSpiceLevel() != null) profile.setSpiceLevel(FoodItemProfile.SpiceLevel.valueOf(p.getSpiceLevel().toLowerCase()));
             profile.setAllergens(p.getAllergens());
             profile.setTags(p.getTags());
-            profile.setTasteProfile(p.getTasteProfile());
+            profile.setTasteProfile((Map<String, Object>) p.getTasteProfile());
             profileRepository.save(profile);
         }
 
@@ -254,28 +257,39 @@ public class MenuServiceImpl implements MenuService {
     }
 
     @Override
-    public ParseIngredientsResponseDto parseIngredients(ParseIngredientsRequestDto request) {
-        // Mocked parser: split commas, normalize (trim/lowercase), attempt to match existing Ingredient rows.
-        String input = request.getText();
-        String[] parts = input.split(",");
-        List<SuggestedIngredientDto> suggested = new ArrayList<>();
-        Set<String> allergens = new HashSet<>();
-        for (String raw : parts) {
-            String n = raw.trim().toLowerCase();
-            if (n.isEmpty()) continue;
-            Optional<Ingredient> existing = ingredientRepository.findByNameIgnoreCase(n);
-            if (existing.isPresent()) {
-                Ingredient ing = existing.get();
-                suggested.add(SuggestedIngredientDto.builder().ingredientId(ing.getIngredientId()).name(ing.getName()).displayName(ing.getDisplayName()).allergens(ing.getAllergens()).build());
-                if (ing.getAllergens() != null) allergens.addAll(ing.getAllergens());
-            } else {
-                // suggested new ingredient
-                List<String> empty = Collections.emptyList();
-                suggested.add(SuggestedIngredientDto.builder().ingredientId(null).name(n).displayName(capitalize(n)).allergens(empty).build());
-            }
+    public CreateFoodItemRequestDto parseIngredients(ParseIngredientsRequestDto request) {
+
+        List<String> ingredients = ingredientRepository.findAllIngredientNames();
+        CreateFoodItemRequestDto createFoodItem;
+        try {
+           createFoodItem = promptTemplate.addFood(request.getItemName(),request.getShortDescription(), request.getCategory(), ingredients);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
-        String notes = "This is a mocked parser. Review suggested ingredients and allergens.";
-        return ParseIngredientsResponseDto.builder().input(input).suggestedIngredients(suggested).allergens(new ArrayList<>(allergens)).notes(notes).build();
+
+        return createFoodItem;
+
+        // Mocked parser: split commas, normalize (trim/lowercase), attempt to match existing Ingredient rows.
+//        String input = request.getItemName();
+//        String[] parts = input.split(",");
+//        List<SuggestedIngredientDto> suggested = new ArrayList<>();
+//        Set<String> allergens = new HashSet<>();
+//        for (String raw : parts) {
+//            String n = raw.trim().toLowerCase();
+//            if (n.isEmpty()) continue;
+//            Optional<Ingredient> existing = ingredientRepository.findByNameIgnoreCase(n);
+//            if (existing.isPresent()) {
+//                Ingredient ing = existing.get();
+//                suggested.add(SuggestedIngredientDto.builder().ingredientId(ing.getIngredientId()).name(ing.getName()).displayName(ing.getDisplayName()).allergens(ing.getAllergens()).build());
+//                if (ing.getAllergens() != null) allergens.addAll(ing.getAllergens());
+//            } else {
+//                // suggested new ingredient
+//                List<String> empty = Collections.emptyList();
+//                suggested.add(SuggestedIngredientDto.builder().ingredientId(null).name(n).displayName(capitalize(n)).allergens(empty).build());
+//            }
+//        }
+//        String notes = "This is a mocked parser. Review suggested ingredients and allergens.";
+//        return ParseIngredientsResponseDto.builder().input(input).suggestedIngredients(suggested).allergens(new ArrayList<>(allergens)).notes(notes).build();
     }
 
     // helpers
