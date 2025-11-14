@@ -12,5 +12,5 @@ public interface OrderService {
     OrderDetailDto getOrderDetail(Long orderId);
     OrderStatusResponseDto getOrderStatus(Long orderId);
     OrderStatusResponseDto updateOrderStatus(Long orderId, OrderStatusUpdateRequestDto request);
-    void submitRating(Long orderId, RatingRequestDto request);
+    void submitRating(RatingRequestDto request);
 }

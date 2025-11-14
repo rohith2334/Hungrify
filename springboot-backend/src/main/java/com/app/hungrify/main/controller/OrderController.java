@@ -73,11 +73,11 @@ public class OrderController {
 
 
     @Operation(summary = "Submit order rating")
-    @PostMapping("/{orderId}/ratings")
+    @PostMapping("/ratings")
     public ResponseEntity<Void> submitRating(
             @PathVariable Long orderId,
             @Valid @RequestBody RatingRequestDto request) {
-        orderService.submitRating(orderId, request);
+        orderService.submitRating(request);
         return ResponseEntity.ok().build();
     }
 }

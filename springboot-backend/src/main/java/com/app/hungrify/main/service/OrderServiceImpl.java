@@ -7,12 +7,14 @@ import com.app.hungrify.main.dto.order.*;
 import com.app.hungrify.main.exception.NotFoundException;
 import com.app.hungrify.main.models.*;
 import com.app.hungrify.main.repository.DeliveryRepository;
+import com.app.hungrify.main.repository.FoodItemRepository;
 import com.app.hungrify.main.repository.OrderRepository;
 import com.app.hungrify.main.repository.RestaurantRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -26,6 +28,7 @@ public class OrderServiceImpl implements OrderService {
     private final RestaurantRepository restaurantRepository;
     private final DeliveryRepository deliveryRepository;
     private final UserRepository userRepository;
+    private final FoodItemRepository foodItemRepository;
 
 
     @Override
@@ -237,11 +240,30 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional
-    public void submitRating(Long orderId, RatingRequestDto request) {
+    public void submitRating(RatingRequestDto request) {
+        Long orderId= request.getOrderId();
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new NotFoundException("Order not found"));
         Map<String, Object> meta = order.getOrderMeta() != null ? order.getOrderMeta() : new HashMap<>();
         meta.put("rating", Map.of("stars", request.getRating(), "review", request.getReview()));
         order.setOrderMeta(meta);
+        orderRepository.save(order);
+        // update food item ratings
+        // After saving order meta
+//        for (OrderItem item : order.getItems()) {
+//            Long itemId = Long.valueOf(item.getItemSnapshot().get("item_id").toString());
+//            FoodItem foodItem = foodItemRepository.findById(itemId)
+//                    .orElseThrow(() -> new NotFoundException("Food item not found"));
+//
+//            BigDecimal ratingCount = foodItem.getRating() != null ? foodItem.getRating() : 0;
+//            double currentRating = foodItem.getRating() != null ? foodItem.getRating().doubleValue() : 0.0;
+//            int newRating = request.getRating();
+//
+//            double newAverage = ((currentRating * ratingCount) + newRating) / (ratingCount + 1);
+//            foodItem.setRating(BigDecimal.valueOf(newAverage));
+//            foodItem.setRating(BigDecimal.valueOf(ratingCount + 1));
+//
+//            foodItemRepository.save(foodItem);
+//        }
     }
 }
