@@ -18,7 +18,7 @@ public class OrderStatusResponseDto {
     private String paymentStatus;
     private Long restaurantId;
     private Long deliveryId;
-    private Map<String, Instant> statusTimestamps;
+    private Map<String, String> statusTimestamps;
     private Instant updatedAt;
     private String note;
 }

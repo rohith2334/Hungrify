@@ -15,18 +15,7 @@ import java.util.List;
 @AllArgsConstructor
 public class PlaceOrderRequestDto {
 
-    @NotNull
-    private Long userId;
 
-    @NotNull
-    private Long restaurantId;
-
-    @NotEmpty
-    private List<OrderItemRequestDto> items;
-
-    @NotNull
-    @DecimalMin(value = "0.0", inclusive = false)
-    private BigDecimal totalAmount;
 
     @NotNull
     private String paymentMethod;

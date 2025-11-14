@@ -3,16 +3,20 @@ package com.app.hungrify.main.service;
 
 import com.app.hungrify.common.models.Users;
 import com.app.hungrify.common.repository.UserRepository;
+import com.app.hungrify.main.dto.cart.CartItemDto;
+import com.app.hungrify.main.dto.cart.CartResponseDto;
 import com.app.hungrify.main.dto.order.*;
 import com.app.hungrify.main.exception.BadRequestException;
 import com.app.hungrify.main.models.*;
 import com.app.hungrify.main.repository.*;
+import com.app.hungrify.main.util.CommonUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -28,17 +32,21 @@ public class CheckoutServiceImpl implements CheckoutService {
     private final FoodItemRepository foodItemRepository;
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
+    private final CommonUtils commonUtils;
+    private final CartService cartService;
 
     @Override
     @Transactional
     public OrderDetailDto placeOrder(PlaceOrderRequestDto request) {
-        Users user = userRepository.findById(request.getUserId())
+        Users user = userRepository.findById(getLoggedInUserId())
                 .orElseThrow(() -> new BadRequestException("User not found"));
-        Restaurant rest = restaurantRepository.findById(request.getRestaurantId())
-                .orElseThrow(() -> new BadRequestException("Restaurant not found"));
 
-        // Validate all items exist and are available
-        List<Long> itemIds = request.getItems().stream().map(OrderItemRequestDto::getItemId).toList();
+        CartResponseDto cartResponseDto =  cartService.getCart();
+
+        List<Long> itemIds = cartResponseDto.getItems().stream()
+                .map(CartItemDto::getItemId)
+                .collect(Collectors.toList());
+
         List<FoodItem> dbItems = foodItemRepository.findAllById(itemIds);
 
         if (dbItems.size() != itemIds.size()) {
@@ -52,37 +60,37 @@ public class CheckoutServiceImpl implements CheckoutService {
         }
 
         // Calculate totals
-        BigDecimal calcTotal = request.getItems().stream()
+
+        BigDecimal calcTotal = cartResponseDto.getItems().stream()
                 .map(i -> i.getUnitPrice().multiply(BigDecimal.valueOf(i.getQuantity())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        if (calcTotal.compareTo(request.getTotalAmount()) != 0) {
-            throw new BadRequestException("Total mismatch. Please refresh cart.");
-        }
 
+        Restaurant rest = restaurantRepository.findById(cartResponseDto.getRestaurantId())
+                .orElseThrow(() -> new BadRequestException("Restaurant not found"));
         // Create order
         Order order = new Order();
         order.setUser(user);
         order.setRestaurant(rest);
-        order.setTotalAmount(request.getTotalAmount());
+        order.setTotalAmount(calcTotal);
         order.setPaymentMethod(Order.PaymentMethod.valueOf(request.getPaymentMethod()));
         order.setPaymentStatus(Order.PaymentStatus.pending);
         order.setStatus(Order.OrderStatus.pending);
         order.setDeliveryAddress(request.getDeliveryAddress());
         order.setDeliveryLat(request.getDeliveryLat());
         order.setDeliveryLon(request.getDeliveryLon());
-        order.setOrderMeta(Map.of("status_timestamps", List.of(Map.of("placed", Instant.now()))));
+        order.setOrderMeta(Map.of("status_timestamps", List.of(Map.of("placed", LocalDateTime.now().toString()))));
 
         Order saved = orderRepository.save(order);
 
         // Add items
-        List<OrderItem> orderItems = request.getItems().stream().map(req -> {
+
+        List<OrderItem> orderItems = cartResponseDto.getItems().stream().map(req -> {
             OrderItem oi = new OrderItem();
             oi.setOrder(saved);
             oi.setItem(dbItems.stream().filter(f -> f.getItemId().equals(req.getItemId())).findFirst().orElse(null));
             oi.setQuantity(req.getQuantity());
             oi.setUnitPrice(req.getUnitPrice());
-            oi.setCustomizationSelected(req.getCustomizationSelected());
             oi.setItemSnapshot(Map.of(
                     "display_name", req.getDisplayName(),
                     "price", req.getUnitPrice()
@@ -111,5 +119,9 @@ public class CheckoutServiceImpl implements CheckoutService {
                                 .build()
                 ).toList())
                 .build();
+    }
+
+    public Long getLoggedInUserId() {
+        return commonUtils.getUserId();
     }
 }

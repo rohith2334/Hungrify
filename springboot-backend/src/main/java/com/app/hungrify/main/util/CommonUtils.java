@@ -2,6 +2,9 @@ package com.app.hungrify.main.util;
 
 
 import com.app.hungrify.common.security.services.UserDetailsImpl;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import org.springframework.context.annotation.Bean;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
@@ -30,5 +33,12 @@ public class CommonUtils {
 
     public Date getCurrentDate() {
         return new Date();
+    }
+
+    @Bean
+    public ObjectMapper objectMapper() {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.registerModule(new JavaTimeModule());
+        return mapper;
     }
 }

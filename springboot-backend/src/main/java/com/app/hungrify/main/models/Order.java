@@ -59,7 +59,7 @@ public class Order {
     @Convert(converter = JsonMapConverter.class)
     private Map<String, Object> paymentMeta;
 
-    private Instant paidAt;
+    private Instant paidAt = Instant.now();
 
     @Lob
     private String deliveryAddress;
@@ -75,10 +75,10 @@ public class Order {
     private Map<String, Object> orderMeta;
 
     @CreationTimestamp
-    private Instant createdAt;
+    private Instant createdAt = Instant.now();
 
     @UpdateTimestamp
-    private Instant updatedAt;
+    private Instant updatedAt = Instant.now();
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderItem> items;
