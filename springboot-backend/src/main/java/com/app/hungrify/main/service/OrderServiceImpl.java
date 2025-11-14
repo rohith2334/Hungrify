@@ -1,6 +1,8 @@
 package com.app.hungrify.main.service;
 
 
+import com.app.hungrify.common.models.Users;
+import com.app.hungrify.common.repository.UserRepository;
 import com.app.hungrify.main.dto.order.*;
 import com.app.hungrify.main.exception.NotFoundException;
 import com.app.hungrify.main.models.*;
@@ -23,6 +25,7 @@ public class OrderServiceImpl implements OrderService {
     private final OrderRepository orderRepository;
     private final RestaurantRepository restaurantRepository;
     private final DeliveryRepository deliveryRepository;
+    private final UserRepository userRepository;
 
 
     @Override
@@ -99,6 +102,13 @@ public class OrderServiceImpl implements OrderService {
         Optional<Delivery> deliveryOpt = deliveryRepository.findByOrder_OrderId(orderId);
         String note = order.getOrderMeta() != null ? (String) order.getOrderMeta().get("last_note") : null;
 
+        Long deliveryPartnerUserId = null;
+        String deliveryPartnerUsername = null;
+        if (deliveryOpt.isPresent() && deliveryOpt.get().getPartnerUser() != null) {
+            deliveryPartnerUserId = deliveryOpt.get().getPartnerUser().getUserId();
+            deliveryPartnerUsername = deliveryOpt.get().getPartnerUser().getUsername();
+        }
+
         return OrderStatusResponseDto.builder()
                 .orderId(order.getOrderId())
                 .status(order.getStatus().name())
@@ -108,26 +118,29 @@ public class OrderServiceImpl implements OrderService {
                 .statusTimestamps(timestamps)
                 .updatedAt(order.getUpdatedAt())
                 .note(note)
+                .deliveryPartnerUserId(deliveryPartnerUserId)
+                .deliveryPartnerUsername(deliveryPartnerUsername)
                 .build();
     }
 
     // Helper method
-  private Instant safeParseInstant(String value) {
-    if (value.contains(".")) {
-        int zIdx = value.indexOf('Z');
-        String beforeZ = zIdx != -1 ? value.substring(0, zIdx) : value;
-        int dotIdx = beforeZ.indexOf('.');
-        String beforeDot = beforeZ.substring(0, dotIdx);
-        String afterDot = beforeZ.substring(dotIdx + 1);
-        String fraction = afterDot.length() > 9 ? afterDot.substring(0, 9)
-                : String.format("%-9s", afterDot).replace(' ', '0');
-        String rebuilt = beforeDot + "." + fraction + "Z";
-        value = rebuilt;
-    } else if (!value.endsWith("Z")) {
-        value = value + "Z";
+    private Instant safeParseInstant(String value) {
+        if (value.contains(".")) {
+            int zIdx = value.indexOf('Z');
+            String beforeZ = zIdx != -1 ? value.substring(0, zIdx) : value;
+            int dotIdx = beforeZ.indexOf('.');
+            String beforeDot = beforeZ.substring(0, dotIdx);
+            String afterDot = beforeZ.substring(dotIdx + 1);
+            String fraction = afterDot.length() > 9 ? afterDot.substring(0, 9)
+                    : String.format("%-9s", afterDot).replace(' ', '0');
+            String rebuilt = beforeDot + "." + fraction + "Z";
+            value = rebuilt;
+        } else if (!value.endsWith("Z")) {
+            value = value + "Z";
+        }
+        return Instant.parse(value);
     }
-    return Instant.parse(value);
-}
+
     @Override
     @Transactional
     public OrderStatusResponseDto updateOrderStatus(Long orderId, OrderStatusUpdateRequestDto request) {
@@ -183,6 +196,29 @@ public class OrderServiceImpl implements OrderService {
             deliveryRepository.save(delivery);
         });
 
+        // if new status is preparing assign a delivery partner who is available
+        if (newStatus == Order.OrderStatus.preparing) {
+            List<Users> deliveryPartner = userRepository.findAvailableDeliveryUsers();
+            Delivery delivery = new Delivery();
+            delivery.setOrder(order);
+            delivery.setStatus(Delivery.DeliveryStatus.assigned);
+            if (!deliveryPartner.isEmpty()) {
+                delivery.setPartnerUser(deliveryPartner.get(0)); // Assign first available partner
+            }
+            delivery.setPartnerVehicleType(Delivery.VehicleType.other); // Default vehicle type
+            delivery.setEstimatedTimeMinutes(30); // Default estimated time
+            delivery.setCreatedAt(Instant.now());
+            deliveryRepository.save(delivery);
+            deliveryOpt = Optional.of(delivery);
+        }
+
+        Long deliveryPartnerUserId = null;
+        String deliveryPartnerUsername = null;
+        if (deliveryOpt.isPresent() && deliveryOpt.get().getPartnerUser() != null) {
+            deliveryPartnerUserId = deliveryOpt.get().getPartnerUser().getUserId();
+            deliveryPartnerUsername = deliveryOpt.get().getPartnerUser().getUsername();
+        }
+
         String note = order.getOrderMeta() != null ? (String) order.getOrderMeta().get("last_note") : null;
 
         return OrderStatusResponseDto.builder()
@@ -194,6 +230,8 @@ public class OrderServiceImpl implements OrderService {
                 .statusTimestamps(timestamps)
                 .updatedAt(order.getUpdatedAt())
                 .note(note)
+                .deliveryPartnerUserId(deliveryPartnerUserId)
+                .deliveryPartnerUsername(deliveryPartnerUsername)
                 .build();
     }
 

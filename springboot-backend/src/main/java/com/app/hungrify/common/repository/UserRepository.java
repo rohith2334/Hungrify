@@ -2,8 +2,10 @@ package com.app.hungrify.common.repository;
 
 import com.app.hungrify.common.models.Users;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -19,4 +21,8 @@ public interface UserRepository extends JpaRepository<Users, Long> {
   Optional<Users> findByPhone(String phone);
   
   Boolean existsByPhone(String phone);
+
+  // In UserRepository.java
+  @Query(value = "SELECT * FROM users WHERE roles = 'ROLE_DELIVERY_AGENT' AND JSON_EXTRACT(profile_json, '$.availability') = true", nativeQuery = true)
+  List<Users> findAvailableDeliveryUsers();
 }

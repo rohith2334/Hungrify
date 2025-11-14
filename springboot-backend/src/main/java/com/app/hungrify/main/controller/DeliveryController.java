@@ -25,8 +25,8 @@ public class DeliveryController {
 
     @Operation(summary = "List current assigned deliveries")
     @GetMapping("/assigned")
-    public ResponseEntity<List<DeliverySummaryDto>> getAssignedDeliveries(@RequestParam Long partnerUserId) {
-        return ResponseEntity.ok(deliveryService.getAssignedDeliveries(partnerUserId));
+    public ResponseEntity<List<DeliverySummaryDto>> getAssignedDeliveries() {
+        return ResponseEntity.ok(deliveryService.getAssignedDeliveries());
     }
 
     @Operation(summary = "Accept or decline a delivery assignment")
@@ -41,17 +41,15 @@ public class DeliveryController {
     @Operation(summary = "Confirm pickup of order")
     @PostMapping("/{deliveryId}/confirm-pickup")
     public ResponseEntity<DeliveryActionResponseDto> confirmPickup(
-            @PathVariable Long deliveryId,
-            @RequestParam Long partnerUserId) {
-        return ResponseEntity.ok(deliveryService.confirmPickup(deliveryId, partnerUserId));
+            @PathVariable Long deliveryId) {
+        return ResponseEntity.ok(deliveryService.confirmPickup(deliveryId));
     }
 
     @Operation(summary = "Mark delivery as completed")
     @PostMapping("/{deliveryId}/mark-delivered")
     public ResponseEntity<DeliveryActionResponseDto> markDelivered(
-            @PathVariable Long deliveryId,
-            @RequestParam Long partnerUserId) {
-        return ResponseEntity.ok(deliveryService.markDelivered(deliveryId, partnerUserId));
+            @PathVariable Long deliveryId) {
+        return ResponseEntity.ok(deliveryService.markDelivered(deliveryId));
     }
 
     @Operation(summary = "List delivery history for partner")

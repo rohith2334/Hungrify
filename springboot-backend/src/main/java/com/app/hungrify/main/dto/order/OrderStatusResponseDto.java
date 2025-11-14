@@ -21,4 +21,6 @@ public class OrderStatusResponseDto {
     private Map<String, String> statusTimestamps;
     private Instant updatedAt;
     private String note;
+    private Long deliveryPartnerUserId;
+    private String deliveryPartnerUsername;
 }

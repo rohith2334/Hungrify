@@ -7,6 +7,7 @@ import com.app.hungrify.main.exception.BadRequestException;
 import com.app.hungrify.main.exception.NotFoundException;
 import com.app.hungrify.main.models.*;
 import com.app.hungrify.main.repository.*;
+import com.app.hungrify.main.util.CommonUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,10 +27,12 @@ public class DeliveryServiceImpl implements DeliveryService {
     private final DeliveryRepository deliveryRepository;
     private final OrderRepository orderRepository;
     private final UserRepository userRepository;
+    private final CommonUtils commonUtils;
 
     @Override
     @Transactional(readOnly = true)
-    public List<DeliverySummaryDto> getAssignedDeliveries(Long partnerUserId) {
+    public List<DeliverySummaryDto> getAssignedDeliveries() {
+        Long partnerUserId = getLoggedInDeliveryPartnerId();
         List<Delivery> list = deliveryRepository.findByPartnerUser_UserIdAndStatusIn(
                 partnerUserId,
                 List.of(Delivery.DeliveryStatus.assigned, Delivery.DeliveryStatus.picked_up)
@@ -59,17 +62,32 @@ public class DeliveryServiceImpl implements DeliveryService {
 
     @Override
     @Transactional
-    public DeliveryActionResponseDto confirmPickup(Long deliveryId, Long partnerUserId) {
+    public DeliveryActionResponseDto confirmPickup(Long deliveryId) {
+        Long partnerUserId = getLoggedInDeliveryPartnerId();
         Delivery d = validatePartnerAccess(deliveryId, partnerUserId);
         d.setStatus(Delivery.DeliveryStatus.picked_up);
         d.setDeliveryMeta(updateMeta(d, "picked_up_at", Instant.now()));
         deliveryRepository.save(d);
+        // update order status
+        Order order = d.getOrder();
+        order.setStatus(Order.OrderStatus.out_for_delivery);
+        //set picked up time in order meta
+        Map<String, Object> orderMeta = order.getOrderMeta() != null ? new HashMap<>(order.getOrderMeta()) : new HashMap<>();
+        Map<String, String> status_timestamps = orderMeta.containsKey("status_timestamps") ?
+                (Map<String, String>) orderMeta.get("status_timestamps") : new HashMap<>();
+        status_timestamps.put("picked_up_at", Instant.now().toString());
+        orderMeta.put("status_timestamps", status_timestamps);
+        order.setOrderMeta(orderMeta); // keep this if other meta updates are needed
+         orderRepository.save(order);
+
         return new DeliveryActionResponseDto(d.getDeliveryId(), "picked_up", "Pickup confirmed");
+
     }
 
     @Override
     @Transactional
-    public DeliveryActionResponseDto markDelivered(Long deliveryId, Long partnerUserId) {
+    public DeliveryActionResponseDto markDelivered(Long deliveryId) {
+        Long partnerUserId= getLoggedInDeliveryPartnerId();
         Delivery d = validatePartnerAccess(deliveryId, partnerUserId);
         d.setStatus(Delivery.DeliveryStatus.delivered);
         d.setActualDeliveryTime(Instant.now());
@@ -79,6 +97,13 @@ public class DeliveryServiceImpl implements DeliveryService {
         // update order status
         Order order = d.getOrder();
         order.setStatus(Order.OrderStatus.delivered);
+
+        Map<String, Object> orderMeta = order.getOrderMeta() != null ? new HashMap<>(order.getOrderMeta()) : new HashMap<>();
+        Map<String, String> status_timestamps = orderMeta.containsKey("status_timestamps") ?
+                (Map<String, String>) orderMeta.get("status_timestamps") : new HashMap<>();
+        status_timestamps.put("delivered_at", Instant.now().toString());
+        orderMeta.put("status_timestamps", status_timestamps);
+        order.setOrderMeta(orderMeta); // keep this if other meta updates are needed
         orderRepository.save(order);
 
         return new DeliveryActionResponseDto(d.getDeliveryId(), "delivered", "Delivery completed successfully");
@@ -166,5 +191,10 @@ public class DeliveryServiceImpl implements DeliveryService {
                 .createdAt(d.getCreatedAt())
                 .updatedAt(o.getUpdatedAt())
                 .build();
+    }
+
+    public Long getLoggedInDeliveryPartnerId() {
+        // This is a placeholder. In a real application, this would fetch the authenticated user's ID.
+        return commonUtils.getUserId();
     }
 }

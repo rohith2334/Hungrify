@@ -120,9 +120,6 @@ public class UserServiceImpl implements UserService {
 
             } else { // default: ROLE_USER
                 user.setProfileJson(profileJson);
-
-
-
                 userRepository.save(user);
             }
 

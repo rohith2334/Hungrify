@@ -7,10 +7,10 @@ import java.util.List;
  * Service interface for delivery partner actions.
  */
 public interface DeliveryService {
-    List<DeliverySummaryDto> getAssignedDeliveries(Long partnerUserId);
+    List<DeliverySummaryDto> getAssignedDeliveries();
     DeliveryActionResponseDto acceptOrDecline(Long deliveryId, Long partnerUserId, AcceptDeliveryRequestDto request);
-    DeliveryActionResponseDto confirmPickup(Long deliveryId, Long partnerUserId);
-    DeliveryActionResponseDto markDelivered(Long deliveryId, Long partnerUserId);
+    DeliveryActionResponseDto confirmPickup(Long deliveryId);
+    DeliveryActionResponseDto markDelivered(Long deliveryId);
     List<DeliverySummaryDto> getHistory(Long partnerUserId);
     EarningsSummaryDto getEarnings(Long partnerUserId);
     DeliveryDetailDto getDeliveryDetail(Long deliveryId);
