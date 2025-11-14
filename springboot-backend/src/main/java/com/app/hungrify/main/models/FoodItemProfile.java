@@ -43,13 +43,16 @@ public class FoodItemProfile {
 
     private Integer caloriesKcal;
 
-    @Column(precision = 6, scale = 2)
+    //    @Column(precision = 6, scale = 2)
+    @Column(name = "carbs_g")
     private BigDecimal carbsG;
 
-    @Column(precision = 6, scale = 2)
+    //    @Column(precision = 6, scale = 2)
+    @Column(name = "protein_g")
     private BigDecimal proteinG;
 
-    @Column(precision = 6, scale = 2)
+    //    @Column(precision = 6, scale = 2)
+    @Column(name = "fats_g")
     private BigDecimal fatsG;
 
     private Integer spiceScore; // 0..5

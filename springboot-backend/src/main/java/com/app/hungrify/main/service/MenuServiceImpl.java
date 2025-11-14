@@ -106,7 +106,7 @@ public class MenuServiceImpl implements MenuService {
             profile.setProteinG(p.getProteinG());
             profile.setFatsG(p.getFatsG());
             profile.setSpiceScore(p.getSpiceScore());
-            profile.setSpiceLevel(p.getSpiceLevel() == null ? null : FoodItemProfile.SpiceLevel.valueOf(p.getSpiceLevel()));
+            profile.setSpiceLevel(p.getSpiceLevel() == null ? null : FoodItemProfile.SpiceLevel.valueOf(p.getSpiceLevel().toLowerCase()));
             profile.setAllergens(p.getAllergens());
             profile.setTags(p.getTags());
             profile.setTasteProfile(p.getTasteProfile());
@@ -173,7 +173,7 @@ public class MenuServiceImpl implements MenuService {
             profile.setProteinG(p.getProteinG());
             profile.setFatsG(p.getFatsG());
             profile.setSpiceScore(p.getSpiceScore());
-            if (p.getSpiceLevel() != null) profile.setSpiceLevel(FoodItemProfile.SpiceLevel.valueOf(p.getSpiceLevel()));
+            if (p.getSpiceLevel() != null) profile.setSpiceLevel(FoodItemProfile.SpiceLevel.valueOf(p.getSpiceLevel().toLowerCase()));
             profile.setAllergens(p.getAllergens());
             profile.setTags(p.getTags());
             profile.setTasteProfile(p.getTasteProfile());
