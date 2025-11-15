@@ -102,13 +102,13 @@ public class AdminController {
         return ResponseEntity.ok(adminService.listUsers(ERole.ROLE_DELIVERY_AGENT.name(), page, limit));
     }
 
-    // Request: GET /api/v1/admin/transactions?status=success&page=1&limit=20
-    @Operation(summary = "List all transactions with optional status filter")
-    @GetMapping("/transactions")
-    public ResponseEntity<List<AdminTransactionDto>> listTransactions(
-            @RequestParam(required = false) String status,
-            @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "20") int limit) {
-        return ResponseEntity.ok(adminService.listTransactions(status, page, limit));
-    }
+//    // Request: GET /api/v1/admin/transactions?status=success&page=1&limit=20
+//    @Operation(summary = "List all transactions with optional status filter")
+//    @GetMapping("/transactions")
+//    public ResponseEntity<List<AdminTransactionDto>> listTransactions(
+//            @RequestParam(required = false) String status,
+//            @RequestParam(defaultValue = "1") int page,
+//            @RequestParam(defaultValue = "20") int limit) {
+//        return ResponseEntity.ok(adminService.listTransactions(status, page, limit));
+//    }
 }
