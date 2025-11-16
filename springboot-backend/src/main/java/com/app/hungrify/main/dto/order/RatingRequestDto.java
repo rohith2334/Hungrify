@@ -12,11 +12,9 @@ import jakarta.validation.constraints.*;
 @AllArgsConstructor
 public class RatingRequestDto {
     @NotNull
-    private Long orderId;
+    private Long itemId;
 
     @Min(1)
     @Max(5)
     private Integer rating;
-
-    private String review;
 }

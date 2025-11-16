@@ -138,6 +138,7 @@ public class AdminServiceImpl implements AdminService {
                         .name(r.getName())
                         .ownerUserId(r.getOwner().getUserId())
                         .ownerName(r.getOwner().getFullName())
+                        .isActive(r.getIsActive())
                         .phone(r.getOwner().getPhone())
                         .restaurantMeta(r.getRestaurantMeta())
                         .submittedAt(r.getCreatedAt())

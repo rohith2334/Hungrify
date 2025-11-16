@@ -243,31 +243,36 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional
-    public void submitRating(RatingRequestDto request) {
-        Long orderId= request.getOrderId();
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new NotFoundException("Order not found"));
-        Map<String, Object> meta = order.getOrderMeta() != null ? order.getOrderMeta() : new HashMap<>();
-        meta.put("rating", Map.of("stars", request.getRating(), "review", request.getReview()));
-        order.setOrderMeta(meta);
-        orderRepository.save(order);
-        // update food item ratings
-        // After saving order meta
-//        for (OrderItem item : order.getItems()) {
-//            Long itemId = Long.valueOf(item.getItemSnapshot().get("item_id").toString());
-//            FoodItem foodItem = foodItemRepository.findById(itemId)
-//                    .orElseThrow(() -> new NotFoundException("Food item not found"));
-//
-//            BigDecimal ratingCount = foodItem.getRating() != null ? foodItem.getRating() : 0;
-//            double currentRating = foodItem.getRating() != null ? foodItem.getRating().doubleValue() : 0.0;
-//            int newRating = request.getRating();
-//
-//            double newAverage = ((currentRating * ratingCount) + newRating) / (ratingCount + 1);
-//            foodItem.setRating(BigDecimal.valueOf(newAverage));
-//            foodItem.setRating(BigDecimal.valueOf(ratingCount + 1));
-//
-//            foodItemRepository.save(foodItem);
-//        }
+    public void submitRating(List<RatingRequestDto> request) {
+        Long userId = getCurrentUserId();
+        Users user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("User not found"));
+
+        for (RatingRequestDto ratingDto : request) {
+            FoodItem item = foodItemRepository.findById(ratingDto.getItemId())
+                    .orElseThrow(() -> new NotFoundException("Food item not found with ID: " + ratingDto.getItemId()));
+
+            // Count how many times this item was ordered
+// Java
+            List<Order> allOrders = orderRepository.findAll();
+            int orderCount = (int) allOrders.stream()
+                .filter(order -> order.getItems().stream()
+                    .anyMatch(item1 -> {
+                        Object idObj = item1.getItemSnapshot().get("item_id");
+                        return idObj != null && idObj.toString().equals(ratingDto.getItemId().toString());
+                    }))
+                .count();
+
+            double currentRating = item.getRating() != null ? item.getRating().doubleValue() : 0.0;
+            int newRating = ratingDto.getRating();
+
+            // Calculate new average
+            double newAverage = ((currentRating * orderCount) + newRating) / (orderCount + 1);
+
+            item.setRating(BigDecimal.valueOf(newAverage));
+            foodItemRepository.save(item);
+        }
+
     }
 
     public Long getCurrentUserId() {

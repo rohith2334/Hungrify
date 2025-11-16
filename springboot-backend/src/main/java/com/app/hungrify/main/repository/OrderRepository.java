@@ -41,4 +41,8 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     Optional<Order> findByOrderId(Long orderId);
 
-List<Order> findByRestaurant_RestaurantIdOrderByCreatedAtDesc(Long restaurantId);}
+    List<Order> findByRestaurant_RestaurantIdOrderByCreatedAtDesc(Long restaurantId);
+
+}
+
+

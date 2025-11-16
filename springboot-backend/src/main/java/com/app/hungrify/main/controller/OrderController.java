@@ -78,8 +78,7 @@ public class OrderController {
     @Operation(summary = "Submit order rating")
     @PostMapping("/ratings")
     public ResponseEntity<Void> submitRating(
-            @PathVariable Long orderId,
-            @Valid @RequestBody RatingRequestDto request) {
+            @Valid @RequestBody List<RatingRequestDto> request) {
         orderService.submitRating(request);
         return ResponseEntity.ok().build();
     }

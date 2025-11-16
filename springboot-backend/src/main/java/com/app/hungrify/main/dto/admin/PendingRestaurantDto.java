@@ -20,4 +20,5 @@ public class PendingRestaurantDto {
     private String phone;
     private Map<String, Object> restaurantMeta;
     private Instant submittedAt;
+    private boolean isActive;
 }
