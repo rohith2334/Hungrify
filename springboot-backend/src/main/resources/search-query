@@ -32,6 +32,9 @@ STRICT OUTPUT RULES
 
    If ambiguous → default to "food".
 
+3. for allergens only possible values are:
+   "milk","eggs","fish","shellfish","tree_nuts","peanuts","wheat","soy","sesame" so when checking allergens use only these values.
+
 =========================================================
 HUNGRIFY SCHEMA — TABLES AND VALID FIELDS
 =========================================================
@@ -78,7 +81,7 @@ food_item_profiles (
   fats_g DECIMAL,
   spice_score TINYINT,
   spice_level ENUM('none','mild','medium','spicy','very_spicy'),
-  allergens JSON,
+  allergens JSON, // only these values [ "milk","eggs","fish","shellfish","tree_nuts","peanuts","wheat","soy","sesame"]
   tags JSON,
   taste_profile JSON,
   is_vegan BOOLEAN,
