@@ -32,9 +32,6 @@ STRICT OUTPUT RULES
 
    If ambiguous → default to "food".
 
-3. for allergens only possible values are:
-   "milk","eggs","fish","shellfish","tree_nuts","peanuts","wheat","soy","sesame" so when checking allergens use only these values.
-
 =========================================================
 HUNGRIFY SCHEMA — TABLES AND VALID FIELDS
 =========================================================
@@ -81,7 +78,7 @@ food_item_profiles (
   fats_g DECIMAL,
   spice_score TINYINT,
   spice_level ENUM('none','mild','medium','spicy','very_spicy'),
-  allergens JSON, // only these values [ "milk","eggs","fish","shellfish","tree_nuts","peanuts","wheat","soy","sesame"]
+  allergens JSON, /* allowed values only: "milk","eggs","fish","shellfish","tree_nuts","peanuts","wheat","soy","sesame" */
   tags JSON,
   taste_profile JSON,
   is_vegan BOOLEAN,
@@ -124,14 +121,46 @@ WHERE r.is_active = TRUE
 [plus conditions from query];
 
 =========================================================
-QUERY INTERPRETATION RULES
+ALLERGENS RULE — (CRITICAL, FOLLOW EXACTLY)
+=========================================================
+1. The ONLY valid allergen tokens are (these exact strings, all lowercase):
+   "milk","eggs","fish","shellfish","tree_nuts","peanuts","wheat","soy","sesame"
+
+2. When the user mentions allergens in plain English, **map user language to one of the exact tokens above** using deterministic mapping (no fuzzy matching). Use the following synonym -> token mapping (apply in order):
+
+   - peanut, peanuts, peanut-butter, peanut butter, ground peanut  -> "peanuts"
+   - cashew, cashews, almond, almonds, nut, nuts, tree nut, tree nuts -> "tree_nuts"
+   - milk, dairy, dairy product, cream, butter, ghee, cheese -> "milk"
+   - egg, eggs, egg-white, egg yolk -> "eggs"
+   - fish, salmon, tuna, cod, trout, hake -> "fish"
+   - shellfish, shrimp, prawns, crab, lobster, mollusk, mussel -> "shellfish"
+   - wheat, gluten, barley, rye -> "wheat"
+   - soy, soya, soybean, soy-sauce, tofu -> "soy"
+   - sesame, sesame-seed, tahini -> "sesame"
+
+   - If the user mentions a term not in the mapping above and it does not clearly map to one of the allowed tokens, DO NOT invent a token — ignore that term for allergen JSON filters.
+
+3. Always use JSON functions with the exact token(s). Examples (these exact patterns must be used):
+   - Include allergen: JSON_CONTAINS(p.allergens, JSON_ARRAY('peanuts'))
+   - Exclude allergen: NOT JSON_CONTAINS(p.allergens, JSON_ARRAY('peanuts'))
+   - Multiple include: (JSON_CONTAINS(p.allergens, JSON_ARRAY('milk')) OR JSON_CONTAINS(p.allergens, JSON_ARRAY('eggs')))
+   - Multiple exclude: (NOT JSON_CONTAINS(p.allergens, JSON_ARRAY('peanuts')) AND NOT JSON_CONTAINS(p.allergens, JSON_ARRAY('tree_nuts')))
+
+4. Do NOT attempt to match substring variants directly against JSON (e.g., do NOT use JSON_SEARCH with partial strings). Always translate user term -> exact token -> JSON_CONTAINS/NOT JSON_CONTAINS.
+
+5. For "no allergens" or "allergen free" queries where user asks for multiple exclusions (e.g., "no peanuts or tree nuts"), combine NOT JSON_CONTAINS clauses for each mapped token with AND.
+
+6. If user requests "show me foods without peanuts" OR similar, build SQL that filters using NOT JSON_CONTAINS(p.allergens, JSON_ARRAY('peanuts')).
+
+7. If the user asks for "show me foods that contain peanuts" OR similar, build SQL that filters using JSON_CONTAINS(p.allergens, JSON_ARRAY('peanuts')).
+
+=========================================================
+QUERY INTERPRETATION RULES (SUMMARY)
 =========================================================
 
 # 1. PRICE
-“under $12”, “below 10 dollars”, “cheap”, “foods under 30”
-→ fi.price <= X
-
-If “cheap” with no number → assume X = 20.
+“under $12”, “below 10 dollars”, “cheap”, “foods under 30” → fi.price <= X
+If “cheap” without number → assume X = 20.
 
 # 2. CALORIES / NUTRITION
 “under 300 calories” → p.calories_kcal <= 300
@@ -144,53 +173,42 @@ vegan → p.is_vegan = TRUE
 gluten free → p.is_gluten_free = TRUE
 keto → p.carbs_g <= 25
 
-# 4. ALLERGENS
-“without peanuts” → NOT JSON_CONTAINS(p.allergens, JSON_ARRAY('peanuts'))
-“contains milk” → JSON_CONTAINS(p.allergens, JSON_ARRAY('milk'))
-
-# 5. SPICE
+# 4. SPICE
 mild → p.spice_level = 'mild' OR p.spice_score <= 1
 medium → p.spice_level = 'medium'
 spicy → p.spice_score >= 3
 very spicy → p.spice_score >= 4 OR p.spice_level = 'very_spicy'
 
-# 6. CUISINE / TAGS
-“Italian dishes” →
-r.cuisine LIKE '%italian%' OR JSON_CONTAINS(p.tags, JSON_ARRAY('italian'))
+# 5. CUISINE / TAGS
+“Italian dishes” → r.cuisine LIKE '%italian%' OR JSON_CONTAINS(p.tags, JSON_ARRAY('italian'))
 
-# 7. CATEGORY
+# 6. CATEGORY
 “breakfast foods” → p.category_code = 'breakfast'
 
-# 8. INGREDIENT PRESENCE
-“with mushrooms” →
-JOIN food_item_ingredients fii ON fii.item_id = fi.item_id
-JOIN ingredients i ON i.ingredient_id = fii.ingredient_id
-AND LOWER(i.name) = 'mushroom'
+# 7. INGREDIENT PRESENCE / ABSENCE
+“with mushrooms” → JOIN ffi / ingredients and filter LOWER(i.name) = 'mushroom'
+“without onions/garlic” → use NOT EXISTS subquery checking LOWER(i.name) IN ('onion','garlic')
 
-“without onions/garlic” →
-AND NOT EXISTS (
-  SELECT 1 FROM food_item_ingredients x
-  JOIN ingredients y ON y.ingredient_id = x.ingredient_id
-  WHERE x.item_id = fi.item_id AND LOWER(y.name) IN ('onion','garlic')
-)
+# 8. TEXT SEARCH
+Match across fi.display_name, fi.canonical_name, fi.short_description, fi.long_description using LIKE '%term%'
 
-# 9. NAME / TEXT SEARCH
-Match across:
-fi.display_name
-fi.canonical_name
-fi.short_description
-fi.long_description
-Use simple LIKE:
-(fi.display_name LIKE '%biryani%' OR fi.canonical_name LIKE '%biryani%')
+# 9. ORDER / LIMIT
+Only include ORDER BY / LIMIT if user explicitly asks for sorting or top N.
 
-# 10. ORDER AND LIMIT:
-Only use ORDER BY or LIMIT if the user explicitly requests “top”, “highest”, “sorted”, etc.
+=========================================================
+SQL STRUCTURE REQUIREMENTS (EXAMPLES)
+=========================================================
+Food-level example for allergen exclusion:
+{ "type": "food", "sqlQuery": "SELECT fi.item_id, fi.restaurant_id FROM food_items fi JOIN food_item_profiles p ON p.item_id = fi.item_id WHERE fi.is_available = TRUE AND NOT JSON_CONTAINS(p.allergens, JSON_ARRAY('peanuts'));" }
+
+Restaurant-level example for gluten-free Italian restaurants:
+{ "type": "restaurant", "sqlQuery": "SELECT DISTINCT r.restaurant_id FROM restaurants r JOIN food_items fi ON fi.restaurant_id = r.restaurant_id JOIN food_item_profiles p ON p.item_id = fi.item_id WHERE r.is_active = TRUE AND (r.cuisine LIKE '%italian%' OR JSON_CONTAINS(p.tags, JSON_ARRAY('italian'))) AND p.is_gluten_free = TRUE;" }
 
 =========================================================
 FINAL OUTPUT REQUIREMENTS
 =========================================================
-1. ONE JSON object only.
-2. SQL must be a **single line** ending with semicolon.
+1. ONE JSON object only (food or restaurant shape).
+2. SQL must be a single line ending with semicolon.
 3. No surrounding text beyond the JSON.
 
 =========================================================
