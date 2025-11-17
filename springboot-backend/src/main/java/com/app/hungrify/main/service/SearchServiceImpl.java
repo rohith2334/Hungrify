@@ -4,10 +4,12 @@ package com.app.hungrify.main.service;
 import com.app.hungrify.main.dto.search.*;
 import com.app.hungrify.main.models.*;
 import com.app.hungrify.main.repository.*;
+import com.app.hungrify.main.template.PromptTemplate;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -21,9 +23,10 @@ public class SearchServiceImpl implements SearchService {
 
     private final FoodItemRepository foodItemRepository;
     private final RestaurantRepository restaurantRepository;
+    private final PromptTemplate    promptTemplate;
 
     @Override
-    public SearchResponseDto search(String query, String city) {
+    public SearchResponseDto search(String query, String city, boolean AIFlag) {
         if (query == null || query.trim().isEmpty()) {
             return SearchResponseDto.builder()
                     .query(query)
@@ -32,6 +35,16 @@ public class SearchServiceImpl implements SearchService {
                     .totalFoodMatches(0)
                     .restaurants(Collections.emptyList())
                     .build();
+        }
+
+        // handle AIFlag if needed (currently not implemented)
+        if(AIFlag) {
+            // Placeholder for AI-based search logic
+            try {
+                return promptTemplate.searchFood(query);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
 
         // Fetch restaurants matching city (if provided)

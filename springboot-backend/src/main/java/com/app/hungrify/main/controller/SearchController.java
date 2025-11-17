@@ -29,8 +29,10 @@ public class SearchController {
     @GetMapping
     public ResponseEntity<SearchResponseDto> search(
             @Parameter(description = "Search query text") @RequestParam String q,
-            @Parameter(description = "City filter (optional)") @RequestParam(required = false) String city) {
+            @Parameter(description = "City filter (optional)") @RequestParam(required = false) String city,
+            @Parameter(description = "Ai search boolean") @RequestParam(required = false) boolean AIFlag
+    ) {
 
-        return ResponseEntity.ok(searchService.search(q, city));
+        return ResponseEntity.ok(searchService.search(q, city, AIFlag));
     }
 }
