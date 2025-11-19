@@ -31,6 +31,13 @@ public class MenuController {
 
     @Operation(summary = "Get grouped menu for restaurant")
     @ApiResponses({ @ApiResponse(responseCode = "200", description = "OK") })
+    @GetMapping
+    public ResponseEntity<GroupedMenuResponseDto> getRestauntMEnu() {
+        return ResponseEntity.ok(menuService.getGroupedMenu(null));
+    }
+
+    @Operation(summary = "Get grouped menu for restaurant")
+    @ApiResponses({ @ApiResponse(responseCode = "200", description = "OK") })
     @GetMapping("/{restaurantId}")
     public ResponseEntity<GroupedMenuResponseDto> getMenu(
             @Parameter(description = "Restaurant id") @PathVariable("restaurantId") Long restaurantId) {

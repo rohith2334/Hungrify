@@ -10,7 +10,6 @@ import com.app.hungrify.main.repository.FoodItemIngredientRepository;
 import com.app.hungrify.main.repository.FoodItemProfileRepository;
 import com.app.hungrify.main.repository.FoodItemRepository;
 import com.app.hungrify.main.repository.IngredientRepository;
-import com.app.hungrify.main.repository.RestaurantRepository;
 import com.app.hungrify.main.template.PromptTemplate;
 import com.app.hungrify.main.util.CommonUtils;
 import lombok.RequiredArgsConstructor;
@@ -20,8 +19,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.IOException;
 import java.util.*;
 import java.util.stream.*;
-import java.time.Instant;
-import java.math.BigDecimal;
 
 /**
  * Implementation that uses repositories only.
@@ -41,9 +38,11 @@ public class MenuServiceImpl implements MenuService {
 
     @Override
     public GroupedMenuResponseDto getGroupedMenu(Long restaurantId) {
+        if (restaurantId == null) {
+            Restaurant restaurant = getRestaurantByUserId();
+            restaurantId = restaurant.getRestaurantId();
+        }
         List<FoodItem> items = foodItemRepository.findAllByRestaurantWithProfile(restaurantId);
-        // group by categoryName (profile)
-//        Map<String, List<FoodItemSummaryDto>> groups = items.stream().map(this::toSummary).collect(Collectors.groupingBy(f -> f.getCategoryName() == null ? "Uncategorized" : f.getCategoryName()));
 
         Map<String, List<FoodItemSummaryDto>> groups = items.stream()
                 .collect(Collectors.groupingBy(
@@ -52,9 +51,29 @@ public class MenuServiceImpl implements MenuService {
                                 : i.getProfile().getCategoryName(),
                         Collectors.mapping(this::toSummary, Collectors.toList())
                 ));
-        List<MenuGroupDto> groupDtos = groups.entrySet().stream()
-                .map(e -> MenuGroupDto.builder().categoryName(e.getKey()).categoryCode(e.getKey().toLowerCase().replace(" ", "_")).items(e.getValue()).build())
+
+        List<MenuGroupDto> groupDtos;
+        if (groups.isEmpty()) {
+            List<String> defaultCategories = Arrays.asList(
+                "Appetizers", "Salads", "Entrées / Mains", "Burgers & Sandwiches",
+                "Pizza & Pasta", "Sides", "Desserts", "Soups", "Drinks / Beverages"
+            );
+            groupDtos = defaultCategories.stream()
+                .map(cat -> MenuGroupDto.builder()
+                    .categoryName(cat)
+                    .categoryCode(cat.toLowerCase().replace(" ", "_").replace("/", "_"))
+                    .items(Collections.emptyList())
+                    .build())
                 .collect(Collectors.toList());
+        } else {
+            groupDtos = groups.entrySet().stream()
+                .map(e -> MenuGroupDto.builder()
+                    .categoryName(e.getKey())
+                    .categoryCode(e.getKey().toLowerCase().replace(" ", "_"))
+                    .items(e.getValue())
+                    .build())
+                .collect(Collectors.toList());
+        }
         return GroupedMenuResponseDto.builder().restaurantId(restaurantId).groups(groupDtos).build();
     }
 

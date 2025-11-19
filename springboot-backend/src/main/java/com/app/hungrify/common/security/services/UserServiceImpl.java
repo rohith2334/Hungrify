@@ -15,6 +15,7 @@ import com.app.hungrify.main.models.Restaurant;
 import com.app.hungrify.main.models.meta.RestaurantMeta;
 import com.app.hungrify.main.repository.AdminRepository;
 import com.app.hungrify.main.repository.RestaurantRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -30,7 +31,7 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final RestaurantRepository restaurantRepository;
     private final AdminRepository adminRepository;
-
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
 
     @Override
@@ -91,8 +92,7 @@ public class UserServiceImpl implements UserService {
                 restaurant.setLatitude(request.getRestaurantData().getLatitude());
                 restaurant.setLongitude(request.getRestaurantData().getLongitude());
                 restaurant.setIsActive(false); // requires admin approval
-                restaurant.setRestaurantMeta((Map<String, Object>) restaurantMeta);
-
+                restaurant.setRestaurantMeta(objectMapper.convertValue(restaurantMeta, Map.class));
                 restaurantRepository.save(restaurant);
             } else if (role.contains("admin")) {
                 user.setProfileJson(profileJson);
@@ -128,6 +128,7 @@ public class UserServiceImpl implements UserService {
             throw new RuntimeException("Error creating profile: " + e.getMessage(), e);
         }
     }
+
     /**
      * Try to resolve the effective user id:
      * - If maybeUserIdFromParam != null => use it (for tests)
