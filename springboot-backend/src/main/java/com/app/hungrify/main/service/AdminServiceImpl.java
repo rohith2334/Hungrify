@@ -156,7 +156,6 @@ public class AdminServiceImpl implements AdminService {
         meta.put("admin_note", note);
         r.setRestaurantMeta(meta);
         restaurantRepository.save(r);
-        // update owner user to verified
         Users owner = r.getOwner();
         owner.setVerified(true);
         userRepository.save(owner);

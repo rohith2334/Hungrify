@@ -12,11 +12,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.text.similarity.JaroWinklerSimilarity;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -165,26 +168,54 @@ public class PromptTemplate {
         }
     }
 
+    private String loadResource(String fileName) {
+        try {
+            ClassPathResource resource = new ClassPathResource(fileName);
 
-    public CreateFoodItemRequestDto addFood(String itemName, String itemShortDescription, String categoryName, List<String> presentIngredients) throws IOException {
-        String ingredients = Files.readString(Paths.get("src/main/resources/ingredients"));
-        String parseIngredients = Files.readString(Paths.get("src/main/resources/parse-ingredients"));
+            try (InputStream inputStream = resource.getInputStream()) {
+                return new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+            }
+
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to load resource file: " + fileName, e);
+        }
+    }
+
+
+    public CreateFoodItemRequestDto addFood(
+            String itemName,
+            String itemShortDescription,
+            String categoryName,
+            List<String> presentIngredients
+    ) throws IOException {
+
+        // Load templates from classpath
+        String ingredients = loadResource("ingredients");
+        String parseIngredients = loadResource("parse-ingredients");
+
         String ingredientCsv = String.join(",", presentIngredients);
+
         String ingredientPrompt = ingredients
                 .replace("<<<INPUT_ITEM_NAME>>>", itemName)
                 .replace("<<<INPUT_SHORT_DESC>>>", itemShortDescription)
                 .replace("<<<INPUT_CATEGORY_NAME>>>", categoryName);
 
-        String ingredientsReponse = chatService.sendPrompt(ingredientPrompt);
+        String ingredientsResponse = chatService.sendPrompt(ingredientPrompt);
 
-        List<CreateIngredientDto> createIngredient = CreateIngredientDto.listFromJson(ingredientsReponse);
+        List<CreateIngredientDto> createIngredient =
+                CreateIngredientDto.listFromJson(ingredientsResponse);
 
-        List<String> predictedIngredients = createIngredient.stream().map(CreateIngredientDto::getName).toList();
+        List<String> predictedIngredients =
+                createIngredient.stream().map(CreateIngredientDto::getName).toList();
 
         log.info("Original ingredients: {}", ingredientCsv);
         log.info("Predicted ingredients: {}", predictedIngredients);
-        List<String> finalIngredients = getFinalMatchedIngredients(presentIngredients, predictedIngredients, 0.85);
+
+        List<String> finalIngredients =
+                getFinalMatchedIngredients(presentIngredients, predictedIngredients, 0.85);
+
         log.info("Final ingredients: {}", finalIngredients);
+
         String finalIngredientsCsv = String.join(",", finalIngredients);
 
         String prompt = parseIngredients
@@ -194,6 +225,7 @@ public class PromptTemplate {
                 .replace("<<<INPUT_INGREDIENT_CSV>>>", finalIngredientsCsv);
 
         String response = chatService.sendPrompt(prompt);
+
         return CreateFoodItemRequestDto.fromJson(response);
     }
 
