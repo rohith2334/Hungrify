@@ -30,11 +30,24 @@ public class TransactionServiceImpl implements TransactionService {
 
         // Simplified filtering (since transactions are in orders table)
         List<Order> orders = orderRepository.findAll(pageable).getContent();
-        return orders.stream()
-                .filter(o -> o.getPaymentTransactionRef() != null)
+        List<TransactionSummaryDto> modifiedOrders =  orders.stream()
+//                .filter(o -> o.getPaymentTransactionRef() != null)
                 .filter(o -> filter.getStatus() == null || o.getPaymentStatus().name().equalsIgnoreCase(filter.getStatus()))
                 .map(this::toSummary)
                 .collect(Collectors.toList());
+
+        // set userName and restaurantName for modifiedOrders dont use paymentTraansactionRef its is always null
+        // After mapping to modifiedOrders, set userName and restaurantName
+        for (int i = 0; i < modifiedOrders.size(); i++) {
+            TransactionSummaryDto dto = modifiedOrders.get(i);
+            Order order = orders.get(i);
+
+            dto.setUserName(order.getUser() != null ? order.getUser().getFirstName() + order.getUser().getLastName(): null);
+            dto.setRestaurantName(order.getRestaurant() != null ? order.getRestaurant().getName() : null);
+        }
+        return modifiedOrders;
+
+
     }
 
     @Override
@@ -49,7 +62,7 @@ public class TransactionServiceImpl implements TransactionService {
     // Helpers
     private TransactionSummaryDto toSummary(Order o) {
         return TransactionSummaryDto.builder()
-                .transactionId(o.getPaymentTransactionRef())
+                .transactionId(o.getOrderId().toString())
                 .orderId(o.getOrderId())
                 .userId(o.getUser().getUserId())
                 .amount(o.getTotalAmount())

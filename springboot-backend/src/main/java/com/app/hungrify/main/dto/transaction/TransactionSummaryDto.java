@@ -21,4 +21,7 @@ public class TransactionSummaryDto {
     private String gateway;
     private String type; // e.g., "order_payment", "refund"
     private Instant createdAt;
+
+    private String userName;
+    private String restaurantName;
 }
