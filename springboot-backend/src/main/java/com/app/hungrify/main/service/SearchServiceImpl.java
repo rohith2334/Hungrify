@@ -42,7 +42,7 @@ public class SearchServiceImpl implements SearchService {
             // Placeholder for AI-based search logic
             try {
                 return promptTemplate.searchFood(query);
-            } catch (IOException e) {
+            } catch (Exception e) {
                 throw new RuntimeException(e);
             }
         }

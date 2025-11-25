@@ -51,10 +51,11 @@ public class PromptTemplate {
         return null; // or throw exception if JSON not found
     }
 
-    public SearchResponseDto searchFood(String query) throws IOException {
+    public SearchResponseDto searchFood(String query) {
         try {
+            // ✅ Load from classpath instead of src/main/resources/...
+            String search = loadResource("search-query");
 
-            String search = Files.readString(Paths.get("src/main/resources/search-query"));
             String prompt = search.replace("<<<INPUT_SEARCH_QUERY>>>", query);
 
             String response = chatService.sendPrompt(prompt);
@@ -71,7 +72,6 @@ public class PromptTemplate {
             String city = null;
 
             if (aiSearch.getType().equalsIgnoreCase("food")) {
-                // Group results by restaurantId
                 Map<Long, List<Map<String, Object>>> grouped = new java.util.HashMap<>();
                 for (Map<String, Object> row : results) {
                     Long restaurantId = ((Number) row.get("restaurant_id")).longValue();
@@ -82,7 +82,7 @@ public class PromptTemplate {
 
                 for (Map.Entry<Long, List<Map<String, Object>>> entry : grouped.entrySet()) {
                     Long restaurantId = entry.getKey();
-                    // Fetch restaurant details
+
                     Map<String, Object> restDetails = executeAiQuery(
                             "SELECT * FROM restaurants WHERE restaurant_id = " + restaurantId
                     ).get(0);
@@ -91,7 +91,10 @@ public class PromptTemplate {
 
                     List<SearchFoodItemDto> foods = new ArrayList<>();
                     for (Map<String, Object> foodRow : entry.getValue()) {
-                        FoodItem foodItem = foodItemRepository.findById(((Number) foodRow.get("item_id")).longValue()).orElse(null);
+                        FoodItem foodItem = foodItemRepository
+                                .findById(((Number) foodRow.get("item_id")).longValue())
+                                .orElse(null);
+
                         if (foodItem != null) {
                             foods.add(SearchFoodItemDto.builder()
                                     .itemId(foodItem.getItemId())
@@ -100,10 +103,8 @@ public class PromptTemplate {
                                     .price(foodItem.getPrice())
                                     .imageUrls(foodItem.getImageUrls())
                                     .rating(foodItem.getRating())
-//                                .categoryName(foodItem.ge)
                                     .build());
                         }
-
                     }
 
                     restaurantDtos.add(SearchRestaurantDto.builder()
@@ -112,22 +113,28 @@ public class PromptTemplate {
                             .cuisine((String) restDetails.get("cuisine"))
                             .address((String) restDetails.get("address"))
                             .city((String) restDetails.get("city"))
-                            .isActive(restDetails.get("is_active") != null ? (Boolean) restDetails.get("is_active") : null)
-                            .latitude(restDetails.get("latitude") != null ? new BigDecimal(restDetails.get("latitude").toString()) : null)
-                            .longitude(restDetails.get("longitude") != null ? new BigDecimal(restDetails.get("longitude").toString()) : null)
+                            .isActive(restDetails.get("is_active") != null
+                                    ? (Boolean) restDetails.get("is_active")
+                                    : null)
+                            .latitude(restDetails.get("latitude") != null
+                                    ? new BigDecimal(restDetails.get("latitude").toString())
+                                    : null)
+                            .longitude(restDetails.get("longitude") != null
+                                    ? new BigDecimal(restDetails.get("longitude").toString())
+                                    : null)
                             .foods(foods)
                             .build());
                 }
             } else {
-                // Restaurant search
+                // restaurant search branch unchanged
                 totalRestaurants = results.size();
                 for (Map<String, Object> restRow : results) {
                     Long restaurantId = ((Number) restRow.get("restaurant_id")).longValue();
                     city = (String) restRow.get("city");
 
-                    // Fetch all food items for this restaurant
                     List<Map<String, Object>> foodRows = executeAiQuery(
-                            "SELECT item_id FROM food_items WHERE restaurant_id = " + restaurantId + " AND is_available = TRUE"
+                            "SELECT item_id FROM food_items WHERE restaurant_id = " + restaurantId +
+                                    " AND is_available = TRUE"
                     );
                     List<SearchFoodItemDto> foods = new ArrayList<>();
                     for (Map<String, Object> foodRow : foodRows) {
@@ -142,9 +149,15 @@ public class PromptTemplate {
                             .cuisine((String) restRow.get("cuisine"))
                             .address((String) restRow.get("address"))
                             .city((String) restRow.get("city"))
-                            .isActive(restRow.get("is_active") != null ? (Boolean) restRow.get("is_active") : null)
-                            .latitude(restRow.get("latitude") != null ? new BigDecimal(restRow.get("latitude").toString()) : null)
-                            .longitude(restRow.get("longitude") != null ? new BigDecimal(restRow.get("longitude").toString()) : null)
+                            .isActive(restRow.get("is_active") != null
+                                    ? (Boolean) restRow.get("is_active")
+                                    : null)
+                            .latitude(restRow.get("latitude") != null
+                                    ? new BigDecimal(restRow.get("latitude").toString())
+                                    : null)
+                            .longitude(restRow.get("longitude") != null
+                                    ? new BigDecimal(restRow.get("longitude").toString())
+                                    : null)
                             .foods(foods)
                             .build());
                 }
@@ -157,6 +170,7 @@ public class PromptTemplate {
                     .totalFoodMatches(totalFoodMatches)
                     .restaurants(restaurantDtos)
                     .build();
+
         } catch (Exception e) {
             log.error("Error during AI search: ", e);
             return SearchResponseDto.builder()
@@ -167,6 +181,7 @@ public class PromptTemplate {
                     .build();
         }
     }
+
 
     private String loadResource(String fileName) {
         try {
