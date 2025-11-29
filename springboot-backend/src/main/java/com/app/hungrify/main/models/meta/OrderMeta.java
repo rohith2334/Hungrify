@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 
 @AllArgsConstructor
@@ -17,6 +18,8 @@ public class OrderMeta {
     private Instant outForDeliveryAt;
     private Instant deliveredAt;
     private String note;
+    private boolean deliveryPartnerAssigned;
+    private List<Long> rejectedUsers;
 
 
     public Map<String, Object> toMap() {

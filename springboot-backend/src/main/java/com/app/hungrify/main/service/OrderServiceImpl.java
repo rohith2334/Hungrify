@@ -203,20 +203,20 @@ public class OrderServiceImpl implements OrderService {
         });
 
         // if new status is preparing assign a delivery partner who is available
-        if (newStatus == Order.OrderStatus.preparing) {
-            List<Users> deliveryPartner = userRepository.findAvailableDeliveryUsers();
-            Delivery delivery = new Delivery();
-            delivery.setOrder(order);
-            delivery.setStatus(Delivery.DeliveryStatus.assigned);
-            if (!deliveryPartner.isEmpty()) {
-                delivery.setPartnerUser(deliveryPartner.get(0)); // Assign first available partner
-            }
-            delivery.setPartnerVehicleType(Delivery.VehicleType.other); // Default vehicle type
-            delivery.setEstimatedTimeMinutes(30); // Default estimated time
-            delivery.setCreatedAt(Instant.now());
-            deliveryRepository.save(delivery);
-            deliveryOpt = Optional.of(delivery);
-        }
+//        if (newStatus == Order.OrderStatus.preparing) {
+//            List<Users> deliveryPartner = userRepository.findAvailableDeliveryUsers();
+//            Delivery delivery = new Delivery();
+//            delivery.setOrder(order);
+//            delivery.setStatus(Delivery.DeliveryStatus.assigned);
+//            if (!deliveryPartner.isEmpty()) {
+//                delivery.setPartnerUser(deliveryPartner.get(0)); // Assign first available partner
+//            }
+//            delivery.setPartnerVehicleType(Delivery.VehicleType.other); // Default vehicle type
+//            delivery.setEstimatedTimeMinutes(30); // Default estimated time
+//            delivery.setCreatedAt(Instant.now());
+//            deliveryRepository.save(delivery);
+//            deliveryOpt = Optional.of(delivery);
+//        }
 
         Long deliveryPartnerUserId = null;
         String deliveryPartnerUsername = null;

@@ -23,20 +23,35 @@ public class DeliveryController {
 
     private final DeliveryService deliveryService;
 
-    @Operation(summary = "List current assigned deliveries")
-    @GetMapping("/assigned")
+    @Operation(summary = "get all pending delivery assignments")
+    @GetMapping("/pending")
     public ResponseEntity<List<DeliverySummaryDto>> getAssignedDeliveries() {
         return ResponseEntity.ok(deliveryService.getAssignedDeliveries());
     }
 
-    @Operation(summary = "Accept or decline a delivery assignment")
-    @PostMapping("/{deliveryId}/accept")
-    public ResponseEntity<DeliveryActionResponseDto> acceptAssignment(
-            @PathVariable Long deliveryId,
-            @RequestParam Long partnerUserId,
-            @Valid @RequestBody AcceptDeliveryRequestDto request) {
-        return ResponseEntity.ok(deliveryService.acceptOrDecline(deliveryId, partnerUserId, request));
+    // get all assigned deliveries for a specific partner
+    @Operation(summary = "get all pending delivery assignments for a specific partner")
+    @GetMapping("/assigned")
+    public ResponseEntity<List<DeliverySummaryDto>> getAssignedDeliveriesForPartner(
+            ) {
+        return ResponseEntity.ok(deliveryService.getAssignedDeliveriesForPartner());
     }
+
+    @Operation(summary = "Accept or decline a delivery assignment")
+    @PostMapping("/{orderId}/accept")
+    public ResponseEntity<DeliveryActionResponseDto> acceptAssignment(
+            @PathVariable Long orderId
+           ) {
+        return ResponseEntity.ok(deliveryService.accept(orderId));
+    }
+
+    @Operation(summary = "Reject a delivery assignment")
+    @PostMapping("/{orderId}/reject")
+    public ResponseEntity<DeliveryActionResponseDto> rejectAssignment(
+            @PathVariable Long orderId) {
+        return ResponseEntity.ok(deliveryService.reject(orderId));
+    }
+
 
     @Operation(summary = "Confirm pickup of order")
     @PostMapping("/{deliveryId}/confirm-pickup")

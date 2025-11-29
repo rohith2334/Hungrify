@@ -8,10 +8,13 @@ import java.util.List;
  */
 public interface DeliveryService {
     List<DeliverySummaryDto> getAssignedDeliveries();
-    DeliveryActionResponseDto acceptOrDecline(Long deliveryId, Long partnerUserId, AcceptDeliveryRequestDto request);
+    DeliveryActionResponseDto accept(Long orderId);
+    DeliveryActionResponseDto reject(Long orderId);
     DeliveryActionResponseDto confirmPickup(Long deliveryId);
     DeliveryActionResponseDto markDelivered(Long deliveryId);
     List<DeliverySummaryDto> getHistory();
     EarningsSummaryDto getEarnings(Long partnerUserId);
     DeliveryDetailDto getDeliveryDetail(Long deliveryId);
+
+    List<DeliverySummaryDto> getAssignedDeliveriesForPartner();
 }

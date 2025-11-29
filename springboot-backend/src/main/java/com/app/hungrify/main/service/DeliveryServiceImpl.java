@@ -1,6 +1,7 @@
 package com.app.hungrify.main.service;
 
 
+import com.app.hungrify.common.models.Users;
 import com.app.hungrify.common.repository.UserRepository;
 import com.app.hungrify.main.dto.delivery.*;
 import com.app.hungrify.main.exception.BadRequestException;
@@ -9,6 +10,7 @@ import com.app.hungrify.main.models.*;
 import com.app.hungrify.main.repository.*;
 import com.app.hungrify.main.util.CommonUtils;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,32 +34,131 @@ public class DeliveryServiceImpl implements DeliveryService {
     @Override
     @Transactional(readOnly = true)
     public List<DeliverySummaryDto> getAssignedDeliveries() {
-        Long partnerUserId = getLoggedInDeliveryPartnerId();
-        List<Delivery> list = deliveryRepository.findByPartnerUser_UserIdAndStatusIn(
-                partnerUserId,
-                List.of(Delivery.DeliveryStatus.assigned, Delivery.DeliveryStatus.picked_up)
-        );
-        return list.stream().map(this::toSummary).collect(Collectors.toList());
+        Long deliveryPartnerId = getLoggedInDeliveryPartnerId();
+
+        List<Order> orders = orderRepository.findAll().stream()
+                .filter(order -> {
+                    // Check order status
+                    Order.OrderStatus status = order.getStatus();
+                    if (status != Order.OrderStatus.confirmed &&
+                            status != Order.OrderStatus.preparing &&
+                            status != Order.OrderStatus.ready_to_pickup) {
+                        return false;
+                    }
+
+                    // Check deliveryPartnerAssigned in orderMeta
+                    Map<String, Object> orderMeta = order.getOrderMeta();
+                    if (orderMeta == null || orderMeta.isEmpty()) {
+                        return true;
+                    }
+
+                    Object deliveryPartnerAssignedObj = orderMeta.get("deliveryPartnerAssigned");
+                    if (deliveryPartnerAssignedObj != null) {
+                        Boolean deliveryPartnerAssigned = (Boolean) deliveryPartnerAssignedObj;
+                        if (deliveryPartnerAssigned) {
+                            return false;
+                        }
+                    }
+
+                    // Check if logged-in user is in rejectedUsers list
+                    if (orderMeta.containsKey("rejectedUsers")) {
+                        Object rejectedUsersObj = orderMeta.get("rejectedUsers");
+                        if (rejectedUsersObj instanceof List) {
+                            List<Long> rejectedUsers = (List<Long>) rejectedUsersObj;
+                            if (rejectedUsers != null && !rejectedUsers.isEmpty() &&
+                                    rejectedUsers.contains(deliveryPartnerId)) {
+                                return false;
+                            }
+                        }
+                    }
+
+                    return true;
+                })
+                .collect(Collectors.toList());
+
+        return orders.stream()
+                .map(order -> {
+                    return DeliverySummaryDto.builder()
+                            .orderId(order.getOrderId())
+                            .restaurantName(order.getRestaurant() != null ? order.getRestaurant().getName() : null)
+                            .customerName(order.getUser() != null ? order.getUser().getFirstName() : null)
+                            .deliveryAddress(order.getDeliveryAddress())
+                            .status(order.getStatus() != null ? order.getStatus().name() : null)
+                            .orderTotal(order.getTotalAmount())
+                            .createdAt(order.getCreatedAt())
+                            .updatedAt(order.getUpdatedAt())
+                            .build();
+                })
+                .collect(Collectors.toList());
     }
 
     @Override
     @Transactional
-    public DeliveryActionResponseDto acceptOrDecline(Long deliveryId, Long partnerUserId, AcceptDeliveryRequestDto request) {
-        Delivery delivery = deliveryRepository.findById(deliveryId)
-                .orElseThrow(() -> new NotFoundException("Delivery not found"));
-        if (!Objects.equals(delivery.getPartnerUser().getUserId(), partnerUserId))
-            throw new BadRequestException("Unauthorized delivery access");
+    public DeliveryActionResponseDto accept(Long orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new NotFoundException("Order not found"));
+        Long deliveryPartnerId = getLoggedInDeliveryPartnerId();
+        Users partnerUser = userRepository.findById(deliveryPartnerId)
+                .orElseThrow(() -> new NotFoundException("Delivery partner user not found"));
 
-        if (request.getAccept()) {
-            delivery.setStatus(Delivery.DeliveryStatus.assigned);
-            delivery.setDeliveryMeta(updateMeta(delivery, "accepted_at", Instant.now()));
-            deliveryRepository.save(delivery);
-            return new DeliveryActionResponseDto(deliveryId, "assigned", "Delivery accepted successfully");
-        } else {
-            delivery.setStatus(Delivery.DeliveryStatus.cancelled);
-            deliveryRepository.save(delivery);
-            return new DeliveryActionResponseDto(deliveryId, "cancelled", "Delivery declined");
+        Order.OrderStatus orderStatus = order.getStatus();
+
+        // Create new delivery entity
+        Delivery delivery = new Delivery();
+        delivery.setOrder(order);
+        delivery.setPartnerUser(partnerUser);
+        delivery.setStatus(Delivery.DeliveryStatus.assigned);
+        delivery.setEstimatedTimeMinutes(30);
+
+        Map<String, Object> deliveryMeta = new HashMap<>();
+        deliveryMeta.put("accepted_at", Instant.now().toString());
+        delivery.setDeliveryMeta(deliveryMeta);
+
+        Delivery savedDelivery = deliveryRepository.save(delivery);
+
+        // Update order status if ready_to_pickup
+        if (orderStatus == Order.OrderStatus.ready_to_pickup) {
+            order.setStatus(Order.OrderStatus.out_for_delivery);
         }
+
+        // Update order meta
+        Map<String, Object> orderMeta = order.getOrderMeta() != null ?
+                new HashMap<>(order.getOrderMeta()) : new HashMap<>();
+        orderMeta.put("deliveryPartnerAssigned", true);
+        order.setOrderMeta(orderMeta);
+        orderRepository.save(order);
+
+        return new DeliveryActionResponseDto(savedDelivery.getDeliveryId(), "assigned", "Delivery accepted successfully");
+    }
+
+    @Override
+    @Transactional
+    public DeliveryActionResponseDto reject(Long orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new NotFoundException("Order not found"));
+
+        Long deliveryPartnerId = getLoggedInDeliveryPartnerId();
+
+        // Update order meta with rejected user
+        Map<String, Object> orderMeta = order.getOrderMeta() != null ?
+                new HashMap<>(order.getOrderMeta()) : new HashMap<>();
+
+        List<Long> rejectedUsers;
+        if (orderMeta.containsKey("rejectedUsers")) {
+            rejectedUsers = (List<Long>) orderMeta.get("rejectedUsers");
+            if (!rejectedUsers.contains(deliveryPartnerId)) {
+                rejectedUsers.add(deliveryPartnerId);
+            }
+        } else {
+            rejectedUsers = new ArrayList<>();
+            rejectedUsers.add(deliveryPartnerId);
+        }
+
+        orderMeta.put("rejectedUsers", rejectedUsers);
+        order.setOrderMeta(orderMeta);
+        orderRepository.save(order);
+
+        return new DeliveryActionResponseDto(null, "rejected", "Delivery rejected successfully");
     }
 
     @Override
@@ -78,7 +179,7 @@ public class DeliveryServiceImpl implements DeliveryService {
         status_timestamps.put("picked_up_at", Instant.now().toString());
         orderMeta.put("status_timestamps", status_timestamps);
         order.setOrderMeta(orderMeta); // keep this if other meta updates are needed
-         orderRepository.save(order);
+        orderRepository.save(order);
 
         return new DeliveryActionResponseDto(d.getDeliveryId(), "picked_up", "Pickup confirmed");
 
@@ -87,7 +188,7 @@ public class DeliveryServiceImpl implements DeliveryService {
     @Override
     @Transactional
     public DeliveryActionResponseDto markDelivered(Long deliveryId) {
-        Long partnerUserId= getLoggedInDeliveryPartnerId();
+        Long partnerUserId = getLoggedInDeliveryPartnerId();
         Delivery d = validatePartnerAccess(deliveryId, partnerUserId);
         d.setStatus(Delivery.DeliveryStatus.delivered);
         d.setActualDeliveryTime(Instant.now());
@@ -163,6 +264,23 @@ public class DeliveryServiceImpl implements DeliveryService {
                 .deliveryAddress(o.getDeliveryAddress())
                 .createdAt(d.getCreatedAt())
                 .build();
+    }
+
+    @Override
+    public List<DeliverySummaryDto> getAssignedDeliveriesForPartner() {
+      List<Delivery> list = deliveryRepository.findByPartnerUser_UserIdAndStatusIn(
+                getLoggedInDeliveryPartnerId(),
+                List.of(Delivery.DeliveryStatus.assigned, Delivery.DeliveryStatus.picked_up)
+        );
+        List<DeliverySummaryDto> deliverySummaryDtos = list.stream().map(this::toSummary).collect(Collectors.toList());
+        // assign orderstatus from associated orders
+        for (DeliverySummaryDto dto : deliverySummaryDtos) {
+            Order order = orderRepository.findById(dto.getOrderId())
+                    .orElseThrow(() -> new NotFoundException("Order not found"));
+            dto.setStatus(order.getStatus().name());
+
+        }
+        return deliverySummaryDtos;
     }
 
     // Helper functions

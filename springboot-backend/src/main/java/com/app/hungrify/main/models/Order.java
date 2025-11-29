@@ -83,7 +83,7 @@ public class Order {
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderItem> items;
 
-    public enum OrderStatus { pending, confirmed, preparing, out_for_delivery, delivered, cancelled }
+    public enum OrderStatus { pending, confirmed, preparing,ready_to_pickup, out_for_delivery, delivered, cancelled }
 
     public enum PaymentMethod { credit_card, debit_card, wallet, cod }
 
