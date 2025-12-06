@@ -104,8 +104,11 @@ public class RestaurantServiceImpl implements RestaurantService {
                         .estimatedReadyInMinutes((o.getCreatedAt() == null) ? null : 20) // placeholder
                         .orderItemsCount(o.getItems() == null ? 0 : o.getItems().size())
                         .totalAmount(o.getTotalAmount())
-                        .customer(Map.of("user_id", o.getUser().getUserId(), "masked_phone", maskPhone(o.getUser().getPhone()), "last_order_count", 1))
-                        .build()).collect(Collectors.toList());
+                        .customer(Map.of(
+                                "user_id", o.getUser().getUserId(),
+                                "masked_phone", maskPhone(o.getUser().getPhone()) != null ? maskPhone(o.getUser().getPhone()) : "N/A",
+                                "last_order_count", 1
+                        )).build()).collect(Collectors.toList());
 
         // popular dishes
         List<java.util.Map<String, Object>> popularRaw = orderItemRepository.findPopularDishesByRestaurant(restaurantId, PageRequest.of(0, limitPopular));

@@ -1,0 +1,2735 @@
+openapi: 3.0.1
+info:
+  title: Hungrify API
+  license:
+    name: MIT License
+    url: https://choosealicense.com/licenses/mit/
+  version: '1.0'
+servers:
+  - url: http://localhost:8080
+    description: Server URL in Development environment
+  - url: https://manve-api.com
+    description: Server URL in QA environment
+tags:
+  - name: Users
+    description: Profile, addresses and preferences
+  - name: Orders
+    description: Place, view and rate orders
+  - name: Admin - Transactions
+    description: View and manage payment transactions
+  - name: Restaurant
+    description: Restaurant profile, dashboard & alerts
+  - name: Admin
+    description: Admin dashboard and management APIs
+  - name: Cart
+    description: Manage user cart stored in profile_json
+  - name: Search
+    description: Combined restaurant and food item search
+  - name: Menu
+    description: Menu CRUD, low-stock, item details, parse-ingredients
+  - name: Deliveries
+    description: Delivery partner endpoints
+paths:
+  /users/me:
+    get:
+      tags:
+        - Users
+      summary: Get current authenticated user's profile
+      operationId: getMe
+      parameters:
+        - name: userId
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/UserProfileDto'
+    put:
+      tags:
+        - Users
+      summary: Update current authenticated user's profile
+      operationId: updateMe
+      parameters:
+        - name: userId
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserRequestDto'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/UserProfileDto'
+  /restaurants/profile:
+    put:
+      tags:
+        - Restaurant
+      summary: Update restaurant profile
+      description: PUT /api/v1/restaurants/profile — updates open hours and meta
+      operationId: updateProfile
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProfileRequestDto'
+        required: true
+      responses:
+        '200':
+          description: Updated
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/RestaurantDetailDto'
+        '400':
+          description: Validation error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/RestaurantDetailDto'
+        '404':
+          description: Not found
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/RestaurantDetailDto'
+  /restaurants/menu/items/{itemId}:
+    get:
+      tags:
+        - Menu
+      summary: Get single item detail
+      operationId: getItem
+      parameters:
+        - name: itemId
+          in: path
+          description: Item id
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/FoodItemDetailDto'
+    put:
+      tags:
+        - Menu
+      summary: Edit (replace) a menu item
+      operationId: updateItem
+      parameters:
+        - name: itemId
+          in: path
+          description: Item id
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateFoodItemRequestDto'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/FoodItemDetailDto'
+    delete:
+      tags:
+        - Menu
+      summary: Soft delete item
+      operationId: deleteItem
+      parameters:
+        - name: itemId
+          in: path
+          description: Item id
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: OK
+    patch:
+      tags:
+        - Menu
+      summary: Inline update item (price/qty/availability)
+      operationId: patchItem
+      parameters:
+        - name: itemId
+          in: path
+          description: Item id
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchFoodItemRequestDto'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/FoodItemDetailDto'
+  /orders/{orderId}/status:
+    get:
+      tags:
+        - Orders
+      summary: Fetch order status timeline
+      operationId: getOrderStatus
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/OrderStatusResponseDto'
+    put:
+      tags:
+        - Orders
+      summary: Update order status
+      description: |
+        Allows restaurants or system to update order state.
+        Supported transitions: pending → confirmed → preparing → out_for_delivery → delivered → cancelled.
+        Automatically syncs with delivery entity if applicable.
+      operationId: updateOrderStatus
+      parameters:
+        - name: orderId
+          in: path
+          description: Order ID
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderStatusUpdateRequestDto'
+        required: true
+      responses:
+        '200':
+          description: Status updated successfully
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/OrderStatusResponseDto'
+        '404':
+          description: Order not found
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/OrderStatusResponseDto'
+  /users/me/addresses:
+    post:
+      tags:
+        - Users
+      summary: Add address to current user's profile
+      operationId: addAddress
+      parameters:
+        - name: userId
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddAddressRequestDto'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: object
+                additionalProperties:
+                  type: string
+  /restaurants/menu/parse-ingredients:
+    post:
+      tags:
+        - Menu
+      summary: Parse ingredients (mocked AI)
+      operationId: parseIngredients
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ParseIngredientsRequestDto'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/CreateFoodItemRequestDto'
+  /restaurants/menu/items:
+    post:
+      tags:
+        - Menu
+      summary: Create a menu item
+      operationId: createItem
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateFoodItemRequestDto'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/FoodItemDetailDto'
+  /orders:
+    get:
+      tags:
+        - Orders
+      summary: List all orders for a user
+      operationId: listUserOrders
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OrderSummaryDto'
+    post:
+      tags:
+        - Orders
+      summary: Place a new order atomically
+      operationId: placeOrder
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlaceOrderRequestDto'
+        required: true
+      responses:
+        '200':
+          description: Order placed successfully
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/OrderDetailDto'
+        '400':
+          description: Invalid or unavailable items
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/OrderDetailDto'
+  /orders/ratings:
+    post:
+      tags:
+        - Orders
+      summary: Submit order rating
+      operationId: submitRating
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RatingRequestDto'
+        required: true
+      responses:
+        '200':
+          description: OK
+  /image/upload:
+    post:
+      tags:
+        - image-controller
+      operationId: uploadImages
+      requestBody:
+        content:
+          application/json:
+            schema:
+              required:
+                - files
+              type: object
+              properties:
+                files:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: object
+  /deliveries/{deliveryId}/mark-delivered:
+    post:
+      tags:
+        - Deliveries
+      summary: Mark delivery as completed
+      operationId: markDelivered
+      parameters:
+        - name: deliveryId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/DeliveryActionResponseDto'
+  /deliveries/{deliveryId}/confirm-pickup:
+    post:
+      tags:
+        - Deliveries
+      summary: Confirm pickup of order
+      operationId: confirmPickup
+      parameters:
+        - name: deliveryId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/DeliveryActionResponseDto'
+  /deliveries/{deliveryId}/accept:
+    post:
+      tags:
+        - Deliveries
+      summary: Accept or decline a delivery assignment
+      operationId: acceptAssignment
+      parameters:
+        - name: deliveryId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: partnerUserId
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AcceptDeliveryRequestDto'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/DeliveryActionResponseDto'
+  /cart/save:
+    post:
+      tags:
+        - Cart
+      summary: Persist cart (optional explicit save)
+      operationId: saveCart
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/CartResponseDto'
+  /cart/remove:
+    post:
+      tags:
+        - Cart
+      summary: Remove/decrement food from cart
+      operationId: removeFromCart
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CartRemoveRequestDto'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/CartResponseDto'
+  /cart/clear:
+    post:
+      tags:
+        - Cart
+      summary: Clear all items from cart
+      operationId: clearCart
+      responses:
+        '200':
+          description: OK
+  /cart/add:
+    post:
+      tags:
+        - Cart
+      summary: Add food to cart (enforces single restaurant constraint)
+      operationId: addToCart
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CartAddRequestDto'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/CartResponseDto'
+  /auth/signup:
+    post:
+      tags:
+        - auth-controller
+      operationId: registerUser
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignupRequest'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: object
+  /auth/signin:
+    post:
+      tags:
+        - auth-controller
+      operationId: authenticateUser
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: object
+  /admin/restaurants/{id}/reject:
+    post:
+      tags:
+        - Admin
+      summary: Reject a restaurant registration
+      operationId: rejectRestaurant
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: reason
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: string
+  /admin/restaurants/{id}/approve:
+    post:
+      tags:
+        - Admin
+      summary: Approve a restaurant registration
+      operationId: approveRestaurant
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: note
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: string
+  /admin/users/{id}:
+    get:
+      tags:
+        - Admin
+      summary: Get user detail by ID
+      operationId: getUserDetail
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/AdminUserDetailDto'
+    patch:
+      tags:
+        - Admin
+      summary: Update user (active, verified, roles)
+      operationId: updateUser
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminUpdateUserRequestDto'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/AdminUserDetailDto'
+  /search:
+    get:
+      tags:
+        - Search
+      summary: Search across restaurants and food items
+      operationId: search
+      parameters:
+        - name: q
+          in: query
+          description: Search query text
+          required: true
+          schema:
+            type: string
+        - name: city
+          in: query
+          description: City filter (optional)
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Search results grouped by restaurant
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/SearchResponseDto'
+        '400':
+          description: Invalid request parameters
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/SearchResponseDto'
+  /restaurants:
+    get:
+      tags:
+        - Restaurant
+      summary: Discovery (paginated, randomized when no filters)
+      description: GET /api/v1/restaurants — List restaurants. If no city/cuisine filters provided returns randomized sample.
+      operationId: discover
+      parameters:
+        - name: city
+          in: query
+          description: City
+          required: false
+          schema:
+            type: string
+        - name: cuisine
+          in: query
+          description: Cuisine
+          required: false
+          schema:
+            type: string
+        - name: page
+          in: query
+          description: Page
+          required: false
+          schema:
+            type: integer
+            format: int32
+            default: 1
+        - name: limit
+          in: query
+          description: Limit
+          required: false
+          schema:
+            type: integer
+            format: int32
+            default: 12
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/PagedRestaurantsResponseDto'
+  /restaurants/{restaurantId}:
+    get:
+      tags:
+        - Restaurant
+      summary: Restaurant details
+      description: GET /api/v1/restaurants/{restaurantId}
+      operationId: details
+      parameters:
+        - name: restaurantId
+          in: path
+          description: Restaurant id
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/RestaurantDetailDto'
+        '404':
+          description: Not found
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/RestaurantDetailDto'
+  /restaurants/orders:
+    get:
+      tags:
+        - Restaurant
+      summary: List orders for restaurant
+      description: GET /api/v1/restaurants/{restaurantId}/orders — List orders for restaurant
+      operationId: listRestaurantOrders
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OrderSummaryDto'
+        '404':
+          description: Not found
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OrderSummaryDto'
+  /restaurants/menu/{restaurantId}:
+    get:
+      tags:
+        - Menu
+      summary: Get grouped menu for restaurant
+      operationId: getMenu
+      parameters:
+        - name: restaurantId
+          in: path
+          description: Restaurant id
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/GroupedMenuResponseDto'
+  /restaurants/menu/low-stock:
+    get:
+      tags:
+        - Menu
+      summary: Get low stock menu items
+      operationId: lowStock
+      parameters: []
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LowStockDto'
+  /restaurants/dashboard:
+    get:
+      tags:
+        - Restaurant
+      summary: Restaurant dashboard
+      description: GET /api/v1/restaurants/{restaurantId}/dashboard — dateFrom/to format yyyy-MM-dd
+      operationId: dashboard
+      parameters:
+        - name: date_from
+          in: query
+          description: Date from yyyy-MM-dd
+          required: false
+          schema:
+            type: string
+          example: '2025-11-01'
+        - name: date_to
+          in: query
+          description: Date to yyyy-MM-dd
+          required: false
+          schema:
+            type: string
+          example: '2025-11-04'
+        - name: limit_popular
+          in: query
+          description: limit popular dishes
+          required: false
+          schema:
+            type: integer
+            format: int32
+            default: 5
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/RestaurantDashboardResponseDto'
+  /restaurants/alerts:
+    get:
+      tags:
+        - Restaurant
+      summary: Recent alerts for restaurant
+      operationId: alerts
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AlertDto'
+  /orders/{orderId}:
+    get:
+      tags:
+        - Orders
+      summary: Fetch full order details
+      operationId: getOrderDetail
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/OrderDetailDto'
+  /ingredients/suggest:
+    get:
+      tags:
+        - reactive-ingredient-controller
+      operationId: suggest
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int32
+            default: 10
+      responses:
+        '200':
+          description: OK
+          content:
+            application/x-ndjson:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/IngredientSuggestionDto'
+  /image/{fileName}:
+    get:
+      tags:
+        - image-controller
+      operationId: getImage
+      parameters:
+        - name: fileName
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  type: string
+                  format: byte
+  /deliveries/{deliveryId}:
+    get:
+      tags:
+        - Deliveries
+      summary: Fetch full delivery detail
+      operationId: getDeliveryDetail
+      parameters:
+        - name: deliveryId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/DeliveryDetailDto'
+  /deliveries/history:
+    get:
+      tags:
+        - Deliveries
+      summary: List delivery history for partner
+      operationId: getHistory
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DeliverySummaryDto'
+  /deliveries/earnings:
+    get:
+      tags:
+        - Deliveries
+      summary: Fetch partner's earnings summary
+      operationId: getEarnings
+      parameters:
+        - name: partnerUserId
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/EarningsSummaryDto'
+  /deliveries/assigned:
+    get:
+      tags:
+        - Deliveries
+      summary: List current assigned deliveries
+      operationId: getAssignedDeliveries
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DeliverySummaryDto'
+  /cart:
+    get:
+      tags:
+        - Cart
+      summary: Fetch saved cart for logged-in user
+      operationId: getCart
+      responses:
+        '200':
+          description: Cart fetched successfully
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/CartResponseDto'
+  /admin/users:
+    get:
+      tags:
+        - Admin
+      summary: List all users (with role filter optional)
+      operationId: listUsers
+      parameters:
+        - name: role
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int32
+            default: 1
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int32
+            default: 20
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AdminUserSummaryDto'
+  /admin/transactions:
+    get:
+      tags:
+        - Admin - Transactions
+      summary: List all payment transactions (paginated)
+      operationId: getTransactions
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: gateway
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: type
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int32
+            default: 1
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int32
+            default: 20
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TransactionSummaryDto'
+  /admin/transactions/{txnId}:
+    get:
+      tags:
+        - Admin - Transactions
+      summary: Fetch full transaction log
+      operationId: getTransactionDetail
+      parameters:
+        - name: txnId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/TransactionDetailDto'
+  /admin/restaurants/pending:
+    get:
+      tags:
+        - Admin
+      summary: Get list of pending restaurants
+      operationId: getPendingRestaurants
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PendingRestaurantDto'
+  /admin/orders:
+    get:
+      tags:
+        - Admin
+      summary: List all orders for admin
+      operationId: listOrders
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int32
+            default: 1
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int32
+            default: 20
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AdminOrderSummaryDto'
+  /admin/orders/{orderId}:
+    get:
+      tags:
+        - Admin
+      summary: Get full order details for admin
+      operationId: getOrderDetail_1
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/AdminOrderDetailDto'
+  /admin/delivery-staff:
+    get:
+      tags:
+        - Admin
+      summary: List all delivery staff
+      operationId: listDeliveryStaff
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int32
+            default: 1
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int32
+            default: 20
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AdminUserSummaryDto'
+  /admin/dashboard:
+    get:
+      tags:
+        - Admin
+      summary: Fetch admin dashboard analytics
+      operationId: getDashboard
+      parameters:
+        - name: dateFrom
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: dateTo
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/DashboardResponseDto'
+  /users/me/addresses/{addressId}:
+    delete:
+      tags:
+        - Users
+      summary: Delete address by id
+      operationId: deleteAddress
+      parameters:
+        - name: userId
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int64
+        - name: addressId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/GenericResponseDto'
+components:
+  schemas:
+    UpdateUserRequestDto:
+      type: object
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        profileImage:
+          type: string
+        profileJson:
+          type: object
+          additionalProperties:
+            type: object
+    UserProfileDto:
+      required:
+        - username
+      type: object
+      properties:
+        userId:
+          type: integer
+          format: int64
+        username:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        fullName:
+          type: string
+        verified:
+          type: boolean
+        active:
+          type: boolean
+        profileImage:
+          type: string
+        profileJson:
+          type: object
+          additionalProperties:
+            type: object
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    UpdateProfileRequestDto:
+      type: object
+      properties:
+        name:
+          type: string
+        address:
+          type: string
+        city:
+          type: string
+        state:
+          type: string
+        postalCode:
+          type: string
+        isActive:
+          type: boolean
+        restaurantMeta:
+          type: object
+          additionalProperties:
+            type: object
+    RestaurantDetailDto:
+      required:
+        - name
+        - restaurantId
+      type: object
+      properties:
+        restaurantId:
+          type: integer
+          format: int64
+        name:
+          type: string
+        ownerUserId:
+          type: integer
+          format: int64
+        cuisine:
+          type: string
+        address:
+          type: string
+        city:
+          type: string
+        state:
+          type: string
+        postalCode:
+          type: string
+        latitude:
+          type: number
+        longitude:
+          type: number
+        restaurantMeta:
+          type: object
+          additionalProperties:
+            type: object
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    CreateIngredientDto:
+      required:
+        - name
+      type: object
+      properties:
+        ingredientId:
+          type: integer
+          format: int64
+        name:
+          type: string
+        removable:
+          type: boolean
+        allergens:
+          type: array
+          items:
+            type: string
+    FoodItemProfileDto:
+      type: object
+      properties:
+        categoryCode:
+          type: string
+        categoryName:
+          type: string
+        caloriesKcal:
+          type: integer
+          format: int32
+        carbsG:
+          type: number
+        proteinG:
+          type: number
+        fatsG:
+          type: number
+        spiceScore:
+          type: integer
+          format: int32
+        spiceLevel:
+          type: string
+        allergens:
+          type: array
+          items:
+            type: string
+        tags:
+          type: array
+          items:
+            type: string
+        tasteProfile:
+          $ref: '#/components/schemas/TasteProfile'
+    TasteProfile:
+      type: object
+      properties:
+        spicy:
+          type: boolean
+        sweet:
+          type: boolean
+        sour:
+          type: boolean
+        salty:
+          type: boolean
+        bitter:
+          type: boolean
+        umami:
+          type: boolean
+        smoky:
+          type: boolean
+        creamy:
+          type: boolean
+        tangy:
+          type: boolean
+        crunchy:
+          type: boolean
+        soft:
+          type: boolean
+        juicy:
+          type: boolean
+        rich:
+          type: boolean
+        mild:
+          type: boolean
+    UpdateFoodItemRequestDto:
+      type: object
+      properties:
+        canonicalName:
+          type: string
+        displayName:
+          type: string
+        shortDescription:
+          type: string
+        longDescription:
+          type: string
+        price:
+          type: number
+        quantity:
+          type: integer
+          format: int32
+        isAvailable:
+          type: boolean
+        prepTimeMinutes:
+          type: integer
+          format: int32
+        imageUrls:
+          type: array
+          items:
+            type: string
+        profile:
+          $ref: '#/components/schemas/FoodItemProfileDto'
+        ingredients:
+          type: array
+          items:
+            $ref: '#/components/schemas/CreateIngredientDto'
+    FoodItemDetailDto:
+      required:
+        - canonicalName
+        - displayName
+        - itemId
+        - price
+        - restaurantId
+      type: object
+      properties:
+        itemId:
+          type: integer
+          format: int64
+        restaurantId:
+          type: integer
+          format: int64
+        canonicalName:
+          type: string
+        displayName:
+          type: string
+        shortDescription:
+          type: string
+        longDescription:
+          type: string
+        price:
+          type: number
+        quantity:
+          type: integer
+          format: int32
+        isAvailable:
+          type: boolean
+        prepTimeMinutes:
+          type: integer
+          format: int32
+        imageUrls:
+          type: array
+          items:
+            type: string
+        rating:
+          type: number
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        categoryCode:
+          type: string
+        categoryName:
+          type: string
+        caloriesKcal:
+          type: integer
+          format: int32
+        carbsG:
+          type: number
+        proteinG:
+          type: number
+        fatsG:
+          type: number
+        spiceScore:
+          type: integer
+          format: int32
+        spiceLevel:
+          type: string
+        allergens:
+          type: array
+          items:
+            type: string
+        tags:
+          type: array
+          items:
+            type: string
+        tasteProfile:
+          type: object
+          additionalProperties:
+            type: object
+        ingredients:
+          type: array
+          items:
+            $ref: '#/components/schemas/IngredientSimpleDto'
+    IngredientSimpleDto:
+      required:
+        - name
+      type: object
+      properties:
+        ingredientId:
+          type: integer
+          format: int64
+        name:
+          type: string
+        displayName:
+          type: string
+        removable:
+          type: boolean
+        allergens:
+          type: array
+          items:
+            type: string
+    OrderStatusUpdateRequestDto:
+      required:
+        - status
+      type: object
+      properties:
+        status:
+          type: string
+          description: New order status (confirmed, preparing, out_for_delivery, delivered, cancelled)
+          example: preparing
+        note:
+          type: string
+          description: Optional remarks or note about the update
+          example: Kitchen started preparation
+      description: Request to update order status
+    OrderStatusResponseDto:
+      type: object
+      properties:
+        orderId:
+          type: integer
+          format: int64
+        status:
+          type: string
+        paymentStatus:
+          type: string
+        restaurantId:
+          type: integer
+          format: int64
+        deliveryId:
+          type: integer
+          format: int64
+        statusTimestamps:
+          type: object
+          additionalProperties:
+            type: string
+        updatedAt:
+          type: string
+          format: date-time
+        note:
+          type: string
+        deliveryPartnerUserId:
+          type: integer
+          format: int64
+        deliveryPartnerUsername:
+          type: string
+    AddAddressRequestDto:
+      required:
+        - label
+        - line1
+      type: object
+      properties:
+        label:
+          type: string
+        line1:
+          type: string
+        line2:
+          type: string
+        city:
+          type: string
+        state:
+          type: string
+        postalCode:
+          type: string
+        country:
+          type: string
+        lat:
+          type: number
+        lon:
+          type: number
+        phone:
+          type: string
+    ParseIngredientsRequestDto:
+      required:
+        - itemName
+      type: object
+      properties:
+        shortDescription:
+          type: string
+        itemName:
+          type: string
+        category:
+          type: string
+    CreateFoodItemRequestDto:
+      required:
+        - canonicalName
+        - displayName
+        - price
+      type: object
+      properties:
+        canonicalName:
+          type: string
+        displayName:
+          type: string
+        shortDescription:
+          type: string
+        longDescription:
+          type: string
+        price:
+          type: number
+        quantity:
+          type: integer
+          format: int32
+        isAvailable:
+          type: boolean
+        prepTimeMinutes:
+          type: integer
+          format: int32
+        imageUrls:
+          type: array
+          items:
+            type: string
+        profile:
+          $ref: '#/components/schemas/FoodItemProfileDto'
+        ingredients:
+          type: array
+          items:
+            $ref: '#/components/schemas/CreateIngredientDto'
+    PlaceOrderRequestDto:
+      required:
+        - deliveryAddress
+        - paymentMethod
+      type: object
+      properties:
+        paymentMethod:
+          type: string
+        deliveryAddress:
+          type: string
+        deliveryLat:
+          type: number
+        deliveryLon:
+          type: number
+    OrderDetailDto:
+      type: object
+      properties:
+        orderId:
+          type: integer
+          format: int64
+        userId:
+          type: integer
+          format: int64
+        restaurantId:
+          type: integer
+          format: int64
+        restaurantName:
+          type: string
+        totalAmount:
+          type: number
+        paymentMethod:
+          type: string
+        paymentStatus:
+          type: string
+        paymentTransactionRef:
+          type: string
+        paymentMeta:
+          type: object
+          additionalProperties:
+            type: object
+        deliveryAddress:
+          type: string
+        status:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItemDto'
+        statusHistory:
+          type: array
+          items:
+            $ref: '#/components/schemas/StatusHistoryDto'
+        createdAt:
+          type: string
+          format: date-time
+    OrderItemDto:
+      type: object
+      properties:
+        orderItemId:
+          type: integer
+          format: int64
+        displayName:
+          type: string
+        quantity:
+          type: integer
+          format: int32
+        unitPrice:
+          type: number
+        customizationSelected:
+          type: object
+          additionalProperties:
+            type: object
+        itemSnapshot:
+          type: object
+          additionalProperties:
+            type: object
+    StatusHistoryDto:
+      type: object
+      properties:
+        status:
+          type: string
+        at:
+          type: string
+          format: date-time
+    RatingRequestDto:
+      required:
+        - orderId
+      type: object
+      properties:
+        orderId:
+          type: integer
+          format: int64
+        rating:
+          maximum: 5
+          minimum: 1
+          type: integer
+          format: int32
+        review:
+          type: string
+    DeliveryActionResponseDto:
+      type: object
+      properties:
+        deliveryId:
+          type: integer
+          format: int64
+        status:
+          type: string
+        message:
+          type: string
+    AcceptDeliveryRequestDto:
+      required:
+        - accept
+      type: object
+      properties:
+        accept:
+          type: boolean
+    CartItemDto:
+      required:
+        - displayName
+        - itemId
+        - quantity
+        - unitPrice
+      type: object
+      properties:
+        itemId:
+          type: integer
+          format: int64
+        displayName:
+          type: string
+        quantity:
+          type: integer
+          format: int32
+        unitPrice:
+          minimum: 0
+          exclusiveMinimum: true
+          type: number
+        imageUrl:
+          type: string
+    CartResponseDto:
+      type: object
+      properties:
+        restaurantId:
+          type: integer
+          format: int64
+        restaurantName:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CartItemDto'
+        subtotal:
+          type: number
+        totalItems:
+          type: integer
+          format: int32
+    CartRemoveRequestDto:
+      required:
+        - itemId
+      type: object
+      properties:
+        itemId:
+          type: integer
+          format: int64
+    CartAddRequestDto:
+      required:
+        - displayName
+        - itemId
+        - quantity
+        - restaurantId
+        - unitPrice
+      type: object
+      properties:
+        restaurantId:
+          type: integer
+          format: int64
+        itemId:
+          type: integer
+          format: int64
+        displayName:
+          type: string
+        quantity:
+          type: integer
+          format: int32
+        unitPrice:
+          minimum: 0
+          exclusiveMinimum: true
+          type: number
+        imageUrl:
+          type: string
+    DeliveryData:
+      type: object
+      properties:
+        vehicleType:
+          type: string
+        serviceAreaCity:
+          type: string
+    RestaurantData:
+      type: object
+      properties:
+        restaurantName:
+          type: string
+        cuisine:
+          type: string
+        city:
+          type: string
+        state:
+          type: string
+        postalCode:
+          type: string
+        latitude:
+          type: number
+        longitude:
+          type: number
+        openHours:
+          type: string
+        isPureVeg:
+          type: boolean
+        isVeganFriendly:
+          type: boolean
+        isGlutenFreeFriendly:
+          type: boolean
+        isHalalCertified:
+          type: boolean
+        isCloudKitchen:
+          type: boolean
+        isOrganicIngredients:
+          type: boolean
+        isNutFreeFriendly:
+          type: boolean
+    SignupRequest:
+      required:
+        - email
+        - password
+        - username
+      type: object
+      properties:
+        username:
+          maxLength: 20
+          minLength: 3
+          type: string
+        password:
+          maxLength: 40
+          minLength: 6
+          type: string
+        phoneNumber:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        email:
+          maxLength: 50
+          minLength: 0
+          type: string
+        role:
+          type: string
+        profileImage:
+          type: string
+        address:
+          type: string
+        restaurantData:
+          $ref: '#/components/schemas/RestaurantData'
+        deliveryData:
+          $ref: '#/components/schemas/DeliveryData'
+    LoginRequest:
+      required:
+        - email
+        - password
+      type: object
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+    PatchFoodItemRequestDto:
+      type: object
+      properties:
+        isAvailable:
+          type: boolean
+        quantity:
+          type: integer
+          format: int32
+        price:
+          type: number
+    AdminUpdateUserRequestDto:
+      type: object
+      properties:
+        active:
+          type: boolean
+        verified:
+          type: boolean
+        roles:
+          maxLength: 255
+          minLength: 0
+          type: string
+    AdminUserDetailDto:
+      type: object
+      properties:
+        userId:
+          type: integer
+          format: int64
+        username:
+          type: string
+        fullName:
+          type: string
+        roles:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        verified:
+          type: boolean
+        active:
+          type: boolean
+        profileImage:
+          type: string
+        profileJson:
+          type: object
+          additionalProperties:
+            type: object
+        linkedRestaurantName:
+          type: string
+        lastLogin:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+    SearchFoodItemDto:
+      type: object
+      properties:
+        itemId:
+          type: integer
+          format: int64
+        displayName:
+          type: string
+        shortDescription:
+          type: string
+        price:
+          type: number
+        imageUrls:
+          type: array
+          items:
+            type: string
+        rating:
+          type: number
+        categoryName:
+          type: string
+    SearchResponseDto:
+      type: object
+      properties:
+        query:
+          type: string
+        city:
+          type: string
+        totalRestaurants:
+          type: integer
+          format: int32
+        totalFoodMatches:
+          type: integer
+          format: int32
+        restaurants:
+          type: array
+          items:
+            $ref: '#/components/schemas/SearchRestaurantDto'
+    SearchRestaurantDto:
+      type: object
+      properties:
+        restaurantId:
+          type: integer
+          format: int64
+        name:
+          type: string
+        cuisine:
+          type: string
+        address:
+          type: string
+        city:
+          type: string
+        isActive:
+          type: boolean
+        latitude:
+          type: number
+        longitude:
+          type: number
+        foods:
+          type: array
+          items:
+            $ref: '#/components/schemas/SearchFoodItemDto'
+    PagedRestaurantsResponseDto:
+      type: object
+      properties:
+        page:
+          type: integer
+          format: int32
+        limit:
+          type: integer
+          format: int32
+        totalEstimate:
+          type: integer
+          format: int64
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/RestaurantSummaryDto'
+    RestaurantSummaryDto:
+      required:
+        - name
+        - restaurantId
+      type: object
+      properties:
+        restaurantId:
+          type: integer
+          format: int64
+        name:
+          type: string
+        cuisine:
+          type: string
+        city:
+          type: string
+        restaurantMeta:
+          type: object
+          additionalProperties:
+            type: object
+        rating:
+          type: number
+        isActive:
+          type: boolean
+    OrderSummaryDto:
+      type: object
+      properties:
+        orderId:
+          type: integer
+          format: int64
+        restaurantId:
+          type: integer
+          format: int64
+        restaurantName:
+          type: string
+        totalAmount:
+          type: number
+        status:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    FoodItemSummaryDto:
+      required:
+        - canonicalName
+        - displayName
+        - itemId
+        - price
+      type: object
+      properties:
+        itemId:
+          type: integer
+          format: int64
+        canonicalName:
+          type: string
+        displayName:
+          type: string
+        shortDescription:
+          type: string
+        price:
+          type: number
+        quantity:
+          type: integer
+          format: int32
+        isAvailable:
+          type: boolean
+        prepTimeMinutes:
+          type: integer
+          format: int32
+        imageUrls:
+          type: array
+          items:
+            type: string
+        rating:
+          type: number
+        lastUpdated:
+          type: string
+          format: date-time
+    GroupedMenuResponseDto:
+      type: object
+      properties:
+        restaurantId:
+          type: integer
+          format: int64
+        groups:
+          type: array
+          items:
+            $ref: '#/components/schemas/MenuGroupDto'
+    MenuGroupDto:
+      type: object
+      properties:
+        categoryCode:
+          type: string
+        categoryName:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/FoodItemSummaryDto'
+    LowStockDto:
+      type: object
+      properties:
+        itemId:
+          type: integer
+          format: int64
+        displayName:
+          type: string
+        quantity:
+          type: integer
+          format: int32
+        threshold:
+          type: integer
+          format: int32
+        isTracked:
+          type: boolean
+    DashboardCurrentOrderDto:
+      type: object
+      properties:
+        orderId:
+          type: integer
+          format: int64
+        status:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        estimatedReadyInMinutes:
+          type: integer
+          format: int32
+        orderItemsCount:
+          type: integer
+          format: int32
+        totalAmount:
+          type: number
+        customer:
+          type: object
+          additionalProperties:
+            type: object
+    DashboardKpiDto:
+      type: object
+      properties:
+        todayRevenue:
+          type: number
+        periodRevenue:
+          type: number
+        todayOrders:
+          type: integer
+          format: int32
+        periodOrders:
+          type: integer
+          format: int32
+        avgOrderValue:
+          type: number
+        pendingOrdersCount:
+          type: integer
+          format: int32
+        cancellationsCount:
+          type: integer
+          format: int32
+        averagePrepTimeMinutes:
+          type: number
+          format: double
+        onTimeRatePct:
+          type: number
+          format: double
+    HourlyTrendDto:
+      type: object
+      properties:
+        hour:
+          type: string
+        orders:
+          type: integer
+          format: int32
+        revenue:
+          type: number
+    InventoryLowDto:
+      type: object
+      properties:
+        itemId:
+          type: integer
+          format: int64
+        displayName:
+          type: string
+        quantity:
+          type: integer
+          format: int32
+        threshold:
+          type: integer
+          format: int32
+        isTracked:
+          type: boolean
+    PopularDishDto:
+      type: object
+      properties:
+        itemId:
+          type: integer
+          format: int64
+        displayName:
+          type: string
+        timesOrdered:
+          type: integer
+          format: int32
+        revenue:
+          type: number
+        imageUrls:
+          type: array
+          items:
+            type: string
+    QuickActionsDto:
+      type: object
+      properties:
+        unconfirmedOrders:
+          type: integer
+          format: int32
+        itemsOutOfStock:
+          type: integer
+          format: int32
+        pendingPickups:
+          type: integer
+          format: int32
+    RestaurantDashboardResponseDto:
+      type: object
+      properties:
+        restaurantId:
+          type: integer
+          format: int64
+        dateFrom:
+          type: string
+        dateTo:
+          type: string
+        kpis:
+          $ref: '#/components/schemas/DashboardKpiDto'
+        currentOrders:
+          type: array
+          items:
+            $ref: '#/components/schemas/DashboardCurrentOrderDto'
+        recentOrders:
+          type: array
+          items:
+            $ref: '#/components/schemas/DashboardCurrentOrderDto'
+        popularDishes:
+          type: array
+          items:
+            $ref: '#/components/schemas/PopularDishDto'
+        inventoryLow:
+          type: array
+          items:
+            $ref: '#/components/schemas/InventoryLowDto'
+        hourlyTrend:
+          type: array
+          items:
+            $ref: '#/components/schemas/HourlyTrendDto'
+        topModifiers:
+          type: array
+          items:
+            $ref: '#/components/schemas/TopModifierDto'
+        quickActions:
+          $ref: '#/components/schemas/QuickActionsDto'
+    TopModifierDto:
+      type: object
+      properties:
+        modifier:
+          type: string
+        timesSelected:
+          type: integer
+          format: int32
+    AlertDto:
+      type: object
+      properties:
+        type:
+          type: string
+        message:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    IngredientSuggestionDto:
+      type: object
+      properties:
+        ingredientId:
+          type: integer
+          format: int64
+        name:
+          type: string
+        displayName:
+          type: string
+        allergens:
+          type: array
+          items:
+            type: string
+        score:
+          type: number
+          format: double
+    DeliveryDetailDto:
+      type: object
+      properties:
+        deliveryId:
+          type: integer
+          format: int64
+        orderId:
+          type: integer
+          format: int64
+        partnerUserId:
+          type: integer
+          format: int64
+        partnerName:
+          type: string
+        partnerVehicleType:
+          type: string
+        status:
+          type: string
+        estimatedTimeMinutes:
+          type: integer
+          format: int32
+        actualDeliveryTime:
+          type: string
+          format: date-time
+        deliveryMeta:
+          type: object
+          additionalProperties:
+            type: object
+        restaurantName:
+          type: string
+        restaurantAddress:
+          type: string
+        orderAmount:
+          type: number
+        deliveryAddress:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    DeliverySummaryDto:
+      type: object
+      properties:
+        deliveryId:
+          type: integer
+          format: int64
+        orderId:
+          type: integer
+          format: int64
+        restaurantName:
+          type: string
+        customerName:
+          type: string
+        deliveryAddress:
+          type: string
+        status:
+          type: string
+        orderTotal:
+          type: number
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    EarningsSummaryDto:
+      type: object
+      properties:
+        partnerUserId:
+          type: integer
+          format: int64
+        totalDeliveries:
+          type: integer
+          format: int32
+        totalEarnings:
+          type: number
+        avgPerDelivery:
+          type: number
+    AdminUserSummaryDto:
+      type: object
+      properties:
+        userId:
+          type: integer
+          format: int64
+        username:
+          type: string
+        fullName:
+          type: string
+        roles:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        active:
+          type: boolean
+        verified:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+    TransactionSummaryDto:
+      type: object
+      properties:
+        transactionId:
+          type: string
+        orderId:
+          type: integer
+          format: int64
+        userId:
+          type: integer
+          format: int64
+        amount:
+          type: number
+        status:
+          type: string
+        gateway:
+          type: string
+        type:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    TransactionDetailDto:
+      type: object
+      properties:
+        transactionId:
+          type: string
+        orderId:
+          type: integer
+          format: int64
+        userId:
+          type: integer
+          format: int64
+        amount:
+          type: number
+        status:
+          type: string
+        gateway:
+          type: string
+        type:
+          type: string
+        rawResponse:
+          type: object
+          additionalProperties:
+            type: object
+        createdAt:
+          type: string
+          format: date-time
+    PendingRestaurantDto:
+      type: object
+      properties:
+        restaurantId:
+          type: integer
+          format: int64
+        name:
+          type: string
+        ownerUserId:
+          type: integer
+          format: int64
+        ownerName:
+          type: string
+        phone:
+          type: string
+        restaurantMeta:
+          type: object
+          additionalProperties:
+            type: object
+        submittedAt:
+          type: string
+          format: date-time
+    AdminOrderSummaryDto:
+      type: object
+      properties:
+        orderId:
+          type: integer
+          format: int64
+        restaurantName:
+          type: string
+        customerMaskedPhone:
+          type: string
+        deliveryStaffName:
+          type: string
+        status:
+          type: string
+        amount:
+          type: number
+        createdAt:
+          type: string
+          format: date-time
+    AdminOrderDetailDto:
+      type: object
+      properties:
+        orderId:
+          type: integer
+          format: int64
+        userId:
+          type: integer
+          format: int64
+        restaurantId:
+          type: integer
+          format: int64
+        items:
+          type: array
+          items:
+            type: object
+            additionalProperties:
+              type: object
+        totals:
+          type: object
+          additionalProperties:
+            type: object
+        status:
+          type: string
+        paymentMethod:
+          type: string
+        paymentStatus:
+          type: string
+        paymentTransactionRef:
+          type: string
+        paymentMeta:
+          type: object
+          additionalProperties:
+            type: object
+        delivery:
+          type: object
+          additionalProperties:
+            type: object
+        createdAt:
+          type: string
+          format: date-time
+    Alert:
+      type: object
+      properties:
+        type:
+          type: string
+        message:
+          type: string
+        createdAt:
+          type: string
+    DashboardResponseDto:
+      type: object
+      properties:
+        dateFrom:
+          type: string
+        dateTo:
+          type: string
+        kpis:
+          $ref: '#/components/schemas/KPI'
+        ordersOverTime:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrdersOverTime'
+        topRestaurants:
+          type: array
+          items:
+            $ref: '#/components/schemas/TopRestaurant'
+        topDeliveryStaff:
+          type: array
+          items:
+            $ref: '#/components/schemas/TopDeliveryStaff'
+        recentAlerts:
+          type: array
+          items:
+            $ref: '#/components/schemas/Alert'
+    KPI:
+      type: object
+      properties:
+        todayOrders:
+          type: integer
+          format: int64
+        totalRevenue:
+          type: number
+        activeUsers:
+          type: integer
+          format: int64
+        avgDeliveryTimeMinutes:
+          type: integer
+          format: int32
+    OrdersOverTime:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        orders:
+          type: integer
+          format: int64
+        revenue:
+          type: number
+    TopDeliveryStaff:
+      type: object
+      properties:
+        userId:
+          type: integer
+          format: int64
+        name:
+          type: string
+        rating:
+          type: number
+          format: double
+        deliveries:
+          type: integer
+          format: int64
+    TopRestaurant:
+      type: object
+      properties:
+        restaurantId:
+          type: integer
+          format: int64
+        name:
+          type: string
+        sales:
+          type: number
+        orders:
+          type: integer
+          format: int64
+    GenericResponseDto:
+      type: object
+      properties:
+        status:
+          type: string
+        message:
+          type: string
