@@ -39,6 +39,10 @@ public class DeliveryServiceImpl implements DeliveryService {
 
         List<Order> orders = orderRepository.findAll().stream()
                 .filter(order -> {
+                    if ("PICKUP_ORDER_BY_CUSTOMER".equals(order.getDeliveryAddress())) {
+                        return false;
+                    }
+
                     // Check order status
                     Order.OrderStatus status = order.getStatus();
                     if (status != Order.OrderStatus.confirmed &&

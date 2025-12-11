@@ -29,4 +29,6 @@ public class OrderStatusResponseDto {
     private Long deliveryPartnerUserId;
     private String deliveryPartnerUsername;
     private List<OrderItemDto> items;
+    private Boolean isPickupOrder;
+
 }

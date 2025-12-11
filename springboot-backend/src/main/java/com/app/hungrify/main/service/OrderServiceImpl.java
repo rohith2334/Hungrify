@@ -45,7 +45,8 @@ public class OrderServiceImpl implements OrderService {
                     .restaurantName(o.getRestaurant().getName())
                     .totalAmount(o.getTotalAmount())
                     .status(o.getStatus().name())
-                    .createdAt(o.getCreatedAt());
+                    .createdAt(o.getCreatedAt())
+                    .isPickupOrder("PICKUP_ORDER_BY_CUSTOMER".equals(o.getDeliveryAddress()));
 
             // Extract batch information from orderMeta
             if (o.getOrderMeta() != null) {
@@ -84,6 +85,7 @@ public class OrderServiceImpl implements OrderService {
                 .paymentStatus(o.getPaymentStatus().name())
                 .status(o.getStatus().name())
                 .createdAt(o.getCreatedAt())
+                .isPickupOrder("PICKUP_ORDER_BY_CUSTOMER".equals(o.getDeliveryAddress()))
                 .items(o.getItems().stream().map(i ->
                         OrderItemDto.builder()
                                 .orderItemId(i.getOrderItemId())
@@ -162,6 +164,7 @@ public class OrderServiceImpl implements OrderService {
                 .deliveryPartnerUserId(deliveryPartnerUserId)
                 .deliveryPartnerUsername(deliveryPartnerUsername)
                 .items(items)
+                .isPickupOrder("PICKUP_ORDER_BY_CUSTOMER".equals(order.getDeliveryAddress()))
                 .build();
     }
 

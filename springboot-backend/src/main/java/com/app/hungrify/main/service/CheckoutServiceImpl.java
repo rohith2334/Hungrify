@@ -50,6 +50,7 @@ public class CheckoutServiceImpl implements CheckoutService {
         // Generate a unique batch ID for this checkout session
         String batchId = UUID.randomUUID().toString();
         Instant batchTimestamp = Instant.now();
+        boolean isPickupOrder = Boolean.TRUE.equals(request.isPickup());
 
         List<Order> savedOrders = new ArrayList<>();
         List<OrderDetailDto> orderDetails = new ArrayList<>();
@@ -86,17 +87,27 @@ public class CheckoutServiceImpl implements CheckoutService {
             order.setPaymentMethod(Order.PaymentMethod.valueOf(request.getPaymentMethod()));
             order.setPaymentStatus(Order.PaymentStatus.pending);
             order.setStatus(Order.OrderStatus.pending);
-            order.setDeliveryAddress(request.getDeliveryAddress());
-            order.setDeliveryLat(request.getDeliveryLat());
-            order.setDeliveryLon(request.getDeliveryLon());
 
-            // Initial meta without batch order IDs
-            order.setOrderMeta(new HashMap<>(Map.of(
-                    "status_timestamps", List.of(Map.of("placed", LocalDateTime.now().toString())),
-                    "batch_id", batchId,
-                    "batch_timestamp", batchTimestamp.toString(),
-                    "total_orders_in_batch", carts.size()
-            )));
+            // Set delivery address based on pickup flag
+            if (isPickupOrder) {
+                order.setDeliveryAddress("PICKUP_ORDER_BY_CUSTOMER");
+                order.setDeliveryLat(null);
+                order.setDeliveryLon(null);
+            } else {
+                order.setDeliveryAddress(request.getDeliveryAddress());
+                order.setDeliveryLat(request.getDeliveryLat());
+                order.setDeliveryLon(request.getDeliveryLon());
+            }
+
+            // Initial meta with pickup flag
+            Map<String, Object> orderMeta = new HashMap<>();
+            orderMeta.put("status_timestamps", List.of(Map.of("placed", LocalDateTime.now().toString())));
+            orderMeta.put("batch_id", batchId);
+            orderMeta.put("batch_timestamp", batchTimestamp.toString());
+            orderMeta.put("total_orders_in_batch", carts.size());
+            orderMeta.put("is_pickup_order", isPickupOrder);
+
+            order.setOrderMeta(orderMeta);
 
             Order saved = orderRepository.save(order);
             savedOrders.add(saved);

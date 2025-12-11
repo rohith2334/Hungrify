@@ -19,6 +19,8 @@ public class OrderSummaryDto {
     private BigDecimal totalAmount;
     private String status;
     private Instant createdAt;
+    private Boolean isPickupOrder;
+
 
     // Batch-related fields
     private String batchId;

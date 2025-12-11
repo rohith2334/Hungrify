@@ -20,8 +20,10 @@ public class PlaceOrderRequestDto {
     @NotNull
     private String paymentMethod;
 
-    @NotBlank
+//    @NotBlank
     private String deliveryAddress;
+
+    private boolean pickup;
 
     private BigDecimal deliveryLat;
     private BigDecimal deliveryLon;

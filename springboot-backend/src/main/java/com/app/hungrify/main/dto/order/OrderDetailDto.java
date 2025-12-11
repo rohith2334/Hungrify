@@ -27,6 +27,8 @@ public class OrderDetailDto {
     private String deliveryAddress;
     private String status;
     private List<OrderItemDto> items;
+    private Boolean isPickupOrder;
+
     private List<StatusHistoryDto> statusHistory;
     private Instant createdAt;
 }

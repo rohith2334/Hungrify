@@ -227,6 +227,7 @@ public class RestaurantServiceImpl implements RestaurantService {
                 .totalAmount(o.getTotalAmount())
                 .status(o.getStatus().name())
                 .createdAt(o.getCreatedAt())
+                .isPickupOrder("PICKUP_ORDER_BY_CUSTOMER".equals(o.getDeliveryAddress()))
                 .build()).collect(Collectors.toList());
     }
 
