@@ -2,13 +2,15 @@ package com.app.hungrify.main.service;
 
 import com.app.hungrify.main.dto.cart.*;
 
+import java.util.List;
+
 /**
  * Cart management service.
  */
 public interface CartService {
-    CartResponseDto getCart();
-    CartResponseDto addToCart(CartAddRequestDto request);
-    CartResponseDto removeFromCart(CartRemoveRequestDto request);
+    List<CartResponseDto> getCart();
+    List<CartResponseDto> addToCart(CartAddRequestDto request);
+    List<CartResponseDto> removeFromCart(CartRemoveRequestDto request);
     void clearCart();
-    CartResponseDto saveCart();
+    List<CartResponseDto> saveCart();
 }

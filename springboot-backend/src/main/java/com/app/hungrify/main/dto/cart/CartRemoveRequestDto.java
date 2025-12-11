@@ -13,4 +13,5 @@ import jakarta.validation.constraints.NotNull;
 public class CartRemoveRequestDto {
     @NotNull
     private Long itemId;
+    private Long restaurantId;
 }

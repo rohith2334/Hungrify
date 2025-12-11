@@ -3,9 +3,11 @@ package com.app.hungrify.main.service;
 import com.app.hungrify.main.dto.order.PlaceOrderRequestDto;
 import com.app.hungrify.main.dto.order.OrderDetailDto;
 
+import java.util.List;
+
 /**
  * Service for validating and creating orders atomically.
  */
 public interface CheckoutService {
-    OrderDetailDto placeOrder(PlaceOrderRequestDto request);
+    List<OrderDetailDto> placeOrder(PlaceOrderRequestDto request);
 }

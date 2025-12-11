@@ -27,7 +27,7 @@ public class OrderController {
             @ApiResponse(responseCode = "400", description = "Invalid or unavailable items")
     })
     @PostMapping
-    public ResponseEntity<OrderDetailDto> placeOrder(@Valid @RequestBody PlaceOrderRequestDto request) {
+    public ResponseEntity<List<OrderDetailDto>> placeOrder(@Valid @RequestBody PlaceOrderRequestDto request) {
         return ResponseEntity.ok(checkoutService.placeOrder(request));
     }
 

@@ -37,90 +37,103 @@ public class CheckoutServiceImpl implements CheckoutService {
 
     @Override
     @Transactional
-    public OrderDetailDto placeOrder(PlaceOrderRequestDto request) {
+    public List<OrderDetailDto> placeOrder(PlaceOrderRequestDto request) {
         Users user = userRepository.findById(getLoggedInUserId())
                 .orElseThrow(() -> new BadRequestException("User not found"));
 
-        CartResponseDto cartResponseDto =  cartService.getCart();
+        List<CartResponseDto> carts = cartService.getCart();
 
-        List<Long> itemIds = cartResponseDto.getItems().stream()
-                .map(CartItemDto::getItemId)
-                .collect(Collectors.toList());
-
-        List<FoodItem> dbItems = foodItemRepository.findAllById(itemIds);
-
-        if (dbItems.size() != itemIds.size()) {
-            throw new BadRequestException("Some items no longer exist");
+        if (carts.isEmpty()) {
+            throw new BadRequestException("Cart is empty");
         }
 
-        for (FoodItem fi : dbItems) {
-            if (Boolean.FALSE.equals(fi.getIsAvailable())) {
-                throw new BadRequestException(fi.getDisplayName() + " is unavailable");
+        List<OrderDetailDto> orders = new ArrayList<>();
+
+        for (CartResponseDto cart : carts) {
+            // Get all item IDs for this restaurant's cart
+            List<Long> itemIds = cart.getItems().stream()
+                    .map(CartItemDto::getItemId)
+                    .collect(Collectors.toList());
+
+            List<FoodItem> dbItems = foodItemRepository.findAllById(itemIds);
+
+            if (dbItems.size() != itemIds.size()) {
+                throw new BadRequestException("Some items no longer exist in restaurant " + cart.getRestaurantId());
             }
+
+            // Validate availability
+            for (FoodItem fi : dbItems) {
+                if (Boolean.FALSE.equals(fi.getIsAvailable())) {
+                    throw new BadRequestException(fi.getDisplayName() + " is unavailable");
+                }
+            }
+
+            // Calculate total for this restaurant
+            BigDecimal calcTotal = cart.getItems().stream()
+                    .map(i -> i.getUnitPrice().multiply(BigDecimal.valueOf(i.getQuantity())))
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            Restaurant rest = restaurantRepository.findById(cart.getRestaurantId())
+                    .orElseThrow(() -> new BadRequestException("Restaurant not found"));
+
+            // Create order for this restaurant
+            Order order = new Order();
+            order.setUser(user);
+            order.setRestaurant(rest);
+            order.setTotalAmount(calcTotal);
+            order.setPaymentMethod(Order.PaymentMethod.valueOf(request.getPaymentMethod()));
+            order.setPaymentStatus(Order.PaymentStatus.pending);
+            order.setStatus(Order.OrderStatus.pending);
+            order.setDeliveryAddress(request.getDeliveryAddress());
+            order.setDeliveryLat(request.getDeliveryLat());
+            order.setDeliveryLon(request.getDeliveryLon());
+            order.setOrderMeta(Map.of("status_timestamps", List.of(Map.of("placed", LocalDateTime.now().toString()))));
+
+            Order saved = orderRepository.save(order);
+
+            // Add items for this order
+            List<OrderItem> orderItems = cart.getItems().stream().map(cartItem -> {
+                OrderItem oi = new OrderItem();
+                oi.setOrder(saved);
+                oi.setItem(dbItems.stream()
+                        .filter(f -> f.getItemId().equals(cartItem.getItemId()))
+                        .findFirst()
+                        .orElse(null));
+                oi.setQuantity(cartItem.getQuantity());
+                oi.setUnitPrice(cartItem.getUnitPrice());
+                oi.setItemSnapshot(Map.of(
+                        "display_name", cartItem.getDisplayName(),
+                        "price", cartItem.getUnitPrice()
+                ));
+                return oi;
+            }).collect(Collectors.toList());
+
+            orderItemRepository.saveAll(orderItems);
+
+            // Build order detail DTO
+            orders.add(OrderDetailDto.builder()
+                    .orderId(saved.getOrderId())
+                    .userId(user.getUserId())
+                    .restaurantId(rest.getRestaurantId())
+                    .restaurantName(rest.getName())
+                    .totalAmount(saved.getTotalAmount())
+                    .status(saved.getStatus().name())
+                    .createdAt(saved.getCreatedAt())
+                    .items(orderItems.stream().map(oi ->
+                            OrderItemDto.builder()
+                                    .orderItemId(oi.getOrderItemId())
+                                    .displayName((String) oi.getItemSnapshot().get("display_name"))
+                                    .quantity(oi.getQuantity())
+                                    .unitPrice(oi.getUnitPrice())
+                                    .itemSnapshot(oi.getItemSnapshot())
+                                    .build()
+                    ).toList())
+                    .build());
         }
-
-        // Calculate totals
-
-        BigDecimal calcTotal = cartResponseDto.getItems().stream()
-                .map(i -> i.getUnitPrice().multiply(BigDecimal.valueOf(i.getQuantity())))
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-
-        Restaurant rest = restaurantRepository.findById(cartResponseDto.getRestaurantId())
-                .orElseThrow(() -> new BadRequestException("Restaurant not found"));
-        // Create order
-        Order order = new Order();
-        order.setUser(user);
-        order.setRestaurant(rest);
-        order.setTotalAmount(calcTotal);
-        order.setPaymentMethod(Order.PaymentMethod.valueOf(request.getPaymentMethod()));
-        order.setPaymentStatus(Order.PaymentStatus.pending);
-        order.setStatus(Order.OrderStatus.pending);
-        order.setDeliveryAddress(request.getDeliveryAddress());
-        order.setDeliveryLat(request.getDeliveryLat());
-        order.setDeliveryLon(request.getDeliveryLon());
-        order.setOrderMeta(Map.of("status_timestamps", List.of(Map.of("placed", LocalDateTime.now().toString()))));
-
-        Order saved = orderRepository.save(order);
-
-        // Add items
-
-        List<OrderItem> orderItems = cartResponseDto.getItems().stream().map(req -> {
-            OrderItem oi = new OrderItem();
-            oi.setOrder(saved);
-            oi.setItem(dbItems.stream().filter(f -> f.getItemId().equals(req.getItemId())).findFirst().orElse(null));
-            oi.setQuantity(req.getQuantity());
-            oi.setUnitPrice(req.getUnitPrice());
-            oi.setItemSnapshot(Map.of(
-                    "display_name", req.getDisplayName(),
-                    "price", req.getUnitPrice()
-            ));
-            return oi;
-        }).collect(Collectors.toList());
-
-        orderItemRepository.saveAll(orderItems);
 
         cartService.clearCart();
 
-        // Return full detail DTO
-        return OrderDetailDto.builder()
-                .orderId(saved.getOrderId())
-                .userId(user.getUserId())
-                .restaurantId(rest.getRestaurantId())
-                .restaurantName(rest.getName())
-                .totalAmount(saved.getTotalAmount())
-                .status(saved.getStatus().name())
-                .createdAt(saved.getCreatedAt())
-                .items(orderItems.stream().map(oi ->
-                        OrderItemDto.builder()
-                                .orderItemId(oi.getOrderItemId())
-                                .displayName((String) oi.getItemSnapshot().get("display_name"))
-                                .quantity(oi.getQuantity())
-                                .unitPrice(oi.getUnitPrice())
-                                .itemSnapshot(oi.getItemSnapshot())
-                                .build()
-                ).toList())
-                .build();
+        return orders;
     }
 
     public Long getLoggedInUserId() {

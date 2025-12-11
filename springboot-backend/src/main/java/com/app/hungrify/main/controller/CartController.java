@@ -11,6 +11,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/cart")
 @RequiredArgsConstructor
@@ -22,13 +24,13 @@ public class CartController {
     @Operation(summary = "Fetch saved cart for logged-in user")
     @ApiResponse(responseCode = "200", description = "Cart fetched successfully")
     @GetMapping
-    public ResponseEntity<CartResponseDto> getCart() {
+    public ResponseEntity<List<CartResponseDto>> getCart() {
         return ResponseEntity.ok(cartService.getCart());
     }
 
     @Operation(summary = "Add food to cart (enforces single restaurant constraint)")
     @PostMapping("/add")
-    public ResponseEntity<CartResponseDto> addToCart(
+    public ResponseEntity<List<CartResponseDto>> addToCart(
             
             @Valid @RequestBody CartAddRequestDto request) {
         return ResponseEntity.ok(cartService.addToCart( request));
@@ -36,7 +38,7 @@ public class CartController {
 
     @Operation(summary = "Remove/decrement food from cart")
     @PostMapping("/remove")
-    public ResponseEntity<CartResponseDto> removeFromCart(
+    public ResponseEntity<List<CartResponseDto>> removeFromCart(
             
             @Valid @RequestBody CartRemoveRequestDto request) {
         return ResponseEntity.ok(cartService.removeFromCart( request));
@@ -51,7 +53,7 @@ public class CartController {
 
     @Operation(summary = "Persist cart (optional explicit save)")
     @PostMapping("/save")
-    public ResponseEntity<CartResponseDto> saveCart() {
+    public ResponseEntity<List<CartResponseDto>> saveCart() {
         return ResponseEntity.ok(cartService.saveCart());
     }
 }
