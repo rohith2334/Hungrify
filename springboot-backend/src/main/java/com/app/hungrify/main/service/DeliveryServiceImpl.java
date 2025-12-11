@@ -83,7 +83,7 @@ public class DeliveryServiceImpl implements DeliveryService {
 
         return orders.stream()
                 .map(order -> {
-                    return DeliverySummaryDto.builder()
+                    DeliverySummaryDto.DeliverySummaryDtoBuilder builder = DeliverySummaryDto.builder()
                             .orderId(order.getOrderId())
                             .restaurantName(order.getRestaurant() != null ? order.getRestaurant().getName() : null)
                             .customerName(order.getUser() != null ? order.getUser().getFirstName() : null)
@@ -91,8 +91,28 @@ public class DeliveryServiceImpl implements DeliveryService {
                             .status(order.getStatus() != null ? order.getStatus().name() : null)
                             .orderTotal(order.getTotalAmount())
                             .createdAt(order.getCreatedAt())
-                            .updatedAt(order.getUpdatedAt())
-                            .build();
+                            .updatedAt(order.getUpdatedAt());
+
+                    // Extract batch information from orderMeta
+                    if (order.getOrderMeta() != null) {
+                        String batchId = (String) order.getOrderMeta().get("batch_id");
+                        Object batchOrderIdsObj = order.getOrderMeta().get("batch_order_ids");
+
+                        if (batchId != null && batchOrderIdsObj instanceof List<?> batchOrderIds) {
+                            builder.batchId(batchId);
+
+                            // Convert to List<Long>
+                            List<Long> orderIds = batchOrderIds.stream()
+                                    .map(id -> id instanceof Number ? ((Number) id).longValue() : Long.parseLong(id.toString()))
+                                    .collect(Collectors.toList());
+
+                            builder.batchOrderIds(orderIds);
+                            builder.isPartOfBatch(orderIds.size() > 1);
+                            builder.totalOrdersInBatch(orderIds.size());
+                        }
+                    }
+
+                    return builder.build();
                 })
                 .collect(Collectors.toList());
     }
@@ -273,17 +293,36 @@ public class DeliveryServiceImpl implements DeliveryService {
 
     @Override
     public List<DeliverySummaryDto> getAssignedDeliveriesForPartner() {
-      List<Delivery> list = deliveryRepository.findByPartnerUser_UserIdAndStatusIn(
+        List<Delivery> list = deliveryRepository.findByPartnerUser_UserIdAndStatusIn(
                 getLoggedInDeliveryPartnerId(),
                 List.of(Delivery.DeliveryStatus.assigned, Delivery.DeliveryStatus.picked_up)
         );
         List<DeliverySummaryDto> deliverySummaryDtos = list.stream().map(this::toSummary).collect(Collectors.toList());
-        // assign orderstatus from associated orders
+
+        // Assign order status and batch information from associated orders
         for (DeliverySummaryDto dto : deliverySummaryDtos) {
             Order order = orderRepository.findById(dto.getOrderId())
                     .orElseThrow(() -> new NotFoundException("Order not found"));
             dto.setStatus(order.getStatus().name());
 
+            // Extract batch information from orderMeta
+            if (order.getOrderMeta() != null) {
+                String batchId = (String) order.getOrderMeta().get("batch_id");
+                Object batchOrderIdsObj = order.getOrderMeta().get("batch_order_ids");
+
+                if (batchId != null && batchOrderIdsObj instanceof List<?> batchOrderIds) {
+                    dto.setBatchId(batchId);
+
+                    // Convert to List<Long>
+                    List<Long> orderIds = batchOrderIds.stream()
+                            .map(id -> id instanceof Number ? ((Number) id).longValue() : Long.parseLong(id.toString()))
+                            .collect(Collectors.toList());
+
+                    dto.setBatchOrderIds(orderIds);
+                    dto.setIsPartOfBatch(orderIds.size() > 1);
+                    dto.setTotalOrdersInBatch(orderIds.size());
+                }
+            }
         }
         return deliverySummaryDtos;
     }
