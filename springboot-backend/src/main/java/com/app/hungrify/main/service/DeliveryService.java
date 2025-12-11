@@ -1,6 +1,8 @@
 package com.app.hungrify.main.service;
 
 import com.app.hungrify.main.dto.delivery.*;
+import com.app.hungrify.main.dto.user.UserProfileDto;
+
 import java.util.List;
 
 /**
@@ -17,4 +19,6 @@ public interface DeliveryService {
     DeliveryDetailDto getDeliveryDetail(Long deliveryId);
 
     List<DeliverySummaryDto> getAssignedDeliveriesForPartner();
+
+    UserProfileDto updatePartnerStatus();
 }

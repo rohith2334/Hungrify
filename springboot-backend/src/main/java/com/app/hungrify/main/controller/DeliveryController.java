@@ -2,6 +2,7 @@ package com.app.hungrify.main.controller;
 
 
 import com.app.hungrify.main.dto.delivery.*;
+import com.app.hungrify.main.dto.user.UserProfileDto;
 import com.app.hungrify.main.service.DeliveryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -33,7 +34,7 @@ public class DeliveryController {
     @Operation(summary = "get all pending delivery assignments for a specific partner")
     @GetMapping("/assigned")
     public ResponseEntity<List<DeliverySummaryDto>> getAssignedDeliveriesForPartner(
-            ) {
+    ) {
         return ResponseEntity.ok(deliveryService.getAssignedDeliveriesForPartner());
     }
 
@@ -41,7 +42,7 @@ public class DeliveryController {
     @PostMapping("/{orderId}/accept")
     public ResponseEntity<DeliveryActionResponseDto> acceptAssignment(
             @PathVariable Long orderId
-           ) {
+    ) {
         return ResponseEntity.ok(deliveryService.accept(orderId));
     }
 
@@ -84,4 +85,13 @@ public class DeliveryController {
     public ResponseEntity<DeliveryDetailDto> getDeliveryDetail(@PathVariable Long deliveryId) {
         return ResponseEntity.ok(deliveryService.getDeliveryDetail(deliveryId));
     }
+
+    //update online or offline status there is user attribute isActive togger tgat if this call is called
+    @Operation(summary = "Update partner online/offline status")
+    @PostMapping("/status")
+    public ResponseEntity<UserProfileDto> updatePartnerStatus(
+    ) {
+        return ResponseEntity.ok(deliveryService.updatePartnerStatus());
+    }
+
 }

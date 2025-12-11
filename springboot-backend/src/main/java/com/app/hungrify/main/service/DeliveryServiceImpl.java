@@ -4,6 +4,7 @@ package com.app.hungrify.main.service;
 import com.app.hungrify.common.models.Users;
 import com.app.hungrify.common.repository.UserRepository;
 import com.app.hungrify.main.dto.delivery.*;
+import com.app.hungrify.main.dto.user.UserProfileDto;
 import com.app.hungrify.main.exception.BadRequestException;
 import com.app.hungrify.main.exception.NotFoundException;
 import com.app.hungrify.main.models.*;
@@ -281,6 +282,26 @@ public class DeliveryServiceImpl implements DeliveryService {
 
         }
         return deliverySummaryDtos;
+    }
+
+    @Override
+    public UserProfileDto updatePartnerStatus() {
+        Long partnerUserId = getLoggedInDeliveryPartnerId();
+        Users user = userRepository.findById(partnerUserId)
+                .orElseThrow(() -> new NotFoundException("User not found"));
+        //toggle isActive status
+        user.setActive(!user.getActive());
+        userRepository.save(user);
+        return UserProfileDto.builder()
+                .userId(user.getUserId())
+                .username(user.getUsername())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .email(user.getEmail())
+                .active(user.getActive())
+                .createdAt(user.getCreatedAt())
+                .updatedAt(user.getUpdatedAt())
+                .build();
     }
 
     // Helper functions
