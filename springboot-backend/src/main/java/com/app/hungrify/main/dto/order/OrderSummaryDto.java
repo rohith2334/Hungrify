@@ -3,6 +3,7 @@ package com.app.hungrify.main.dto.order;
 import lombok.*;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.List;
 
 /**
  * Lightweight summary for order listing.
@@ -18,4 +19,10 @@ public class OrderSummaryDto {
     private BigDecimal totalAmount;
     private String status;
     private Instant createdAt;
+
+    // Batch-related fields
+    private String batchId;
+    private List<Long> batchOrderIds;
+    private Boolean isPartOfBatch;
+    private Integer totalOrdersInBatch;
 }

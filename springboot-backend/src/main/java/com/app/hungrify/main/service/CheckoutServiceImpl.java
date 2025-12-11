@@ -47,10 +47,15 @@ public class CheckoutServiceImpl implements CheckoutService {
             throw new BadRequestException("Cart is empty");
         }
 
-        List<OrderDetailDto> orders = new ArrayList<>();
+        // Generate a unique batch ID for this checkout session
+        String batchId = UUID.randomUUID().toString();
+        Instant batchTimestamp = Instant.now();
 
+        List<Order> savedOrders = new ArrayList<>();
+        List<OrderDetailDto> orderDetails = new ArrayList<>();
+
+        // First pass: Create all orders
         for (CartResponseDto cart : carts) {
-            // Get all item IDs for this restaurant's cart
             List<Long> itemIds = cart.getItems().stream()
                     .map(CartItemDto::getItemId)
                     .collect(Collectors.toList());
@@ -61,14 +66,12 @@ public class CheckoutServiceImpl implements CheckoutService {
                 throw new BadRequestException("Some items no longer exist in restaurant " + cart.getRestaurantId());
             }
 
-            // Validate availability
             for (FoodItem fi : dbItems) {
                 if (Boolean.FALSE.equals(fi.getIsAvailable())) {
                     throw new BadRequestException(fi.getDisplayName() + " is unavailable");
                 }
             }
 
-            // Calculate total for this restaurant
             BigDecimal calcTotal = cart.getItems().stream()
                     .map(i -> i.getUnitPrice().multiply(BigDecimal.valueOf(i.getQuantity())))
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
@@ -76,7 +79,6 @@ public class CheckoutServiceImpl implements CheckoutService {
             Restaurant rest = restaurantRepository.findById(cart.getRestaurantId())
                     .orElseThrow(() -> new BadRequestException("Restaurant not found"));
 
-            // Create order for this restaurant
             Order order = new Order();
             order.setUser(user);
             order.setRestaurant(rest);
@@ -87,11 +89,19 @@ public class CheckoutServiceImpl implements CheckoutService {
             order.setDeliveryAddress(request.getDeliveryAddress());
             order.setDeliveryLat(request.getDeliveryLat());
             order.setDeliveryLon(request.getDeliveryLon());
-            order.setOrderMeta(Map.of("status_timestamps", List.of(Map.of("placed", LocalDateTime.now().toString()))));
+
+            // Initial meta without batch order IDs
+            order.setOrderMeta(new HashMap<>(Map.of(
+                    "status_timestamps", List.of(Map.of("placed", LocalDateTime.now().toString())),
+                    "batch_id", batchId,
+                    "batch_timestamp", batchTimestamp.toString(),
+                    "total_orders_in_batch", carts.size()
+            )));
 
             Order saved = orderRepository.save(order);
+            savedOrders.add(saved);
 
-            // Add items for this order
+            // Save order items
             List<OrderItem> orderItems = cart.getItems().stream().map(cartItem -> {
                 OrderItem oi = new OrderItem();
                 oi.setOrder(saved);
@@ -110,8 +120,7 @@ public class CheckoutServiceImpl implements CheckoutService {
 
             orderItemRepository.saveAll(orderItems);
 
-            // Build order detail DTO
-            orders.add(OrderDetailDto.builder()
+            orderDetails.add(OrderDetailDto.builder()
                     .orderId(saved.getOrderId())
                     .userId(user.getUserId())
                     .restaurantId(rest.getRestaurantId())
@@ -131,9 +140,21 @@ public class CheckoutServiceImpl implements CheckoutService {
                     .build());
         }
 
+        // Second pass: Update all orders with batch order IDs
+        List<Long> batchOrderIds = savedOrders.stream()
+                .map(Order::getOrderId)
+                .collect(Collectors.toList());
+
+        for (Order order : savedOrders) {
+            Map<String, Object> meta = order.getOrderMeta();
+            meta.put("batch_order_ids", batchOrderIds);
+            order.setOrderMeta(meta);
+        }
+        orderRepository.saveAll(savedOrders);
+
         cartService.clearCart();
 
-        return orders;
+        return orderDetails;
     }
 
     public Long getLoggedInUserId() {

@@ -36,16 +36,38 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public List<OrderSummaryDto> listUserOrders() {
         Long userId = getCurrentUserId();
-        return orderRepository.findByUser_UserIdOrderByCreatedAtDesc(userId)
-                .stream().map(o -> OrderSummaryDto.builder()
-                        .orderId(o.getOrderId())
-                        .restaurantId(o.getRestaurant().getRestaurantId())
-                        .restaurantName(o.getRestaurant().getName())
-                        .totalAmount(o.getTotalAmount())
-                        .status(o.getStatus().name())
-                        .createdAt(o.getCreatedAt())
-                        .build())
-                .collect(Collectors.toList());
+        List<Order> orders = orderRepository.findByUser_UserIdOrderByCreatedAtDesc(userId);
+
+        return orders.stream().map(o -> {
+            OrderSummaryDto.OrderSummaryDtoBuilder builder = OrderSummaryDto.builder()
+                    .orderId(o.getOrderId())
+                    .restaurantId(o.getRestaurant().getRestaurantId())
+                    .restaurantName(o.getRestaurant().getName())
+                    .totalAmount(o.getTotalAmount())
+                    .status(o.getStatus().name())
+                    .createdAt(o.getCreatedAt());
+
+            // Extract batch information from orderMeta
+            if (o.getOrderMeta() != null) {
+                String batchId = (String) o.getOrderMeta().get("batch_id");
+                Object batchOrderIdsObj = o.getOrderMeta().get("batch_order_ids");
+
+                if (batchId != null && batchOrderIdsObj instanceof List<?> batchOrderIds) {
+                    builder.batchId(batchId);
+
+                    // Convert to List<Long>
+                    List<Long> orderIds = batchOrderIds.stream()
+                            .map(id -> id instanceof Number ? ((Number) id).longValue() : Long.parseLong(id.toString()))
+                            .collect(Collectors.toList());
+
+                    builder.batchOrderIds(orderIds);
+                    builder.isPartOfBatch(orderIds.size() > 1);
+                    builder.totalOrdersInBatch(orderIds.size());
+                }
+            }
+
+            return builder.build();
+        }).collect(Collectors.toList());
     }
 
     @Override
@@ -115,17 +137,31 @@ public class OrderServiceImpl implements OrderService {
             deliveryPartnerUsername = deliveryOpt.get().getPartnerUser().getUsername();
         }
 
+        // Map order items to DTOs
+        List<OrderItemDto> items = order.getItems().stream()
+                .map(i -> OrderItemDto.builder()
+                        .orderItemId(i.getOrderItemId())
+                        .displayName((String) i.getItemSnapshot().get("display_name"))
+                        .quantity(i.getQuantity())
+                        .unitPrice(i.getUnitPrice())
+                        .itemSnapshot(i.getItemSnapshot())
+                        .build())
+                .collect(Collectors.toList());
+
         return OrderStatusResponseDto.builder()
                 .orderId(order.getOrderId())
                 .status(order.getStatus().name())
                 .paymentStatus(order.getPaymentStatus().name())
                 .restaurantId(order.getRestaurant().getRestaurantId())
+                .restaurantName(order.getRestaurant().getName())
+                .totalAmount(order.getTotalAmount())
                 .deliveryId(deliveryOpt.map(Delivery::getDeliveryId).orElse(null))
                 .statusTimestamps(timestamps)
                 .updatedAt(order.getUpdatedAt())
                 .note(note)
                 .deliveryPartnerUserId(deliveryPartnerUserId)
                 .deliveryPartnerUsername(deliveryPartnerUsername)
+                .items(items)
                 .build();
     }
 
