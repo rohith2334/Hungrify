@@ -1,0 +1,1539 @@
+{
+	"info": {
+		"_postman_id": "082f04f1-bda5-4785-b9a1-9632fc409441",
+		"name": "HUNGRIFY",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "7774276",
+		"_collection_link": "https://bold-meadow-637632.postman.co/workspace/UNIVERSITYPROJECTS~8b7a62d7-3176-42b3-a6f5-a5bc867da686/collection/7774276-082f04f1-bda5-4785-b9a1-9632fc409441?action=share&source=collection_link&creator=7774276"
+	},
+	"item": [
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "signup- auth/signup",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"adnin2\",\n  \"password\": \"test123\",\n  \"phoneNumber\": \"+1-415-555-20221\",\n  \"firstName\": \"George\",\n  \"lastName\": \"Lopez\",\n  \"email\": \"admin2@gmail.com\",\n  \"role\": \"admin\",\n  \"profileImage\": \"https://example.com/avatars/delivery1.jpg\",\n  \"address\": \"245 9th St, San Francisco, CA 94103\",\n  \"restaurantData\": {}\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://{{Host}}:{{port}}/api/v1/auth/signup",
+							"protocol": "http",
+							"host": [
+								"{{Host}}"
+							],
+							"port": "{{port}}",
+							"path": [
+								"api",
+								"v1",
+								"auth",
+								"signup"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "signin- auth/signin",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jwtToken = pm.response.headers.get('X-JWT-TOKEN');",
+									"var tokenValue = jwtToken.split('Bearer=')[1].split(';')[0];",
+									"pm.environment.set('Authorization',tokenValue)"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "// {\n//   \"email\": \"user1@gmail.com\",\n//  \"password\": \"test123\"\n// }\n// {\n//   \"email\": \"delivery1@gmail.com\",\n//  \"password\": \"test123\"\n// }\n// {\n//   \"email\": \"restaurant1@gmail.com\",\n//  \"password\": \"Rest@1234\"\n// }\n{\n    \"email\": \"admin1@gmail.com\",\n    \"password\": \"test123\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://{{Host}}:{{port}}/api/v1/auth/signin",
+							"protocol": "http",
+							"host": [
+								"{{Host}}"
+							],
+							"port": "{{port}}",
+							"path": [
+								"api",
+								"v1",
+								"auth",
+								"signin"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "logout",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{Authorization}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "http://{{Host}}:{{port}}/api/v1/auth/logout",
+							"protocol": "http",
+							"host": [
+								"{{Host}}"
+							],
+							"port": "{{port}}",
+							"path": [
+								"api",
+								"v1",
+								"auth",
+								"logout"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Image",
+			"item": [
+				{
+					"name": "upload image- image/upload",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "files",
+									"type": "file",
+									"src": "/Users/rohithsai/Downloads/mypics/DSC06472.JPG"
+								}
+							]
+						},
+						"url": {
+							"raw": "http://{{secondHost}}:{{secondPort}}/api/v1/image/upload",
+							"protocol": "http",
+							"host": [
+								"{{secondHost}}"
+							],
+							"port": "{{secondPort}}",
+							"path": [
+								"api",
+								"v1",
+								"image",
+								"upload"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "getaimge - image/{imageId}",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{secondHost}}:{{secondPort}}/api/v1/image/23592fe2-3ddb-4195-8ca5-56ba676f7f78.png",
+							"protocol": "http",
+							"host": [
+								"{{secondHost}}"
+							],
+							"port": "{{secondPort}}",
+							"path": [
+								"api",
+								"v1",
+								"image",
+								"23592fe2-3ddb-4195-8ca5-56ba676f7f78.png"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "restaurant",
+			"item": [
+				{
+					"name": "getRestaurantOrders",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{Authorization}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"admin1\",\n  \"password\": \"test123\",\n  \"email\": \"admin1@gmail.com\",\n  \"role\": \"admin\",\n  \"firstName\": \"admin\",\n  \"lastName\": \"one\",\n  \"address\": \"41 new yourk street rajamundry\",\n  \"gender\": \"male\",\n  \"phone\": \"387319713\",\n  \"profileImage\": \"58f642c-2fd1-4d37-a1cc-6b7f1d2d0e69.jpeg\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://{{Host}}:{{port}}/api/v1/restaurants/orders",
+							"protocol": "http",
+							"host": [
+								"{{Host}}"
+							],
+							"port": "{{port}}",
+							"path": [
+								"api",
+								"v1",
+								"restaurants",
+								"orders"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "restaurnt dashboard",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{Authorization}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"admin1\",\n  \"password\": \"test123\",\n  \"email\": \"admin1@gmail.com\",\n  \"role\": \"admin\",\n  \"firstName\": \"admin\",\n  \"lastName\": \"one\",\n  \"address\": \"41 new yourk street rajamundry\",\n  \"gender\": \"male\",\n  \"phone\": \"387319713\",\n  \"profileImage\": \"58f642c-2fd1-4d37-a1cc-6b7f1d2d0e69.jpeg\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://{{Host}}:{{port}}/api/v1/restaurants/dashboard",
+							"protocol": "http",
+							"host": [
+								"{{Host}}"
+							],
+							"port": "{{port}}",
+							"path": [
+								"api",
+								"v1",
+								"restaurants",
+								"dashboard"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "List restaurants",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{Host}}:{{port}}/api/v1/restaurants",
+							"protocol": "http",
+							"host": [
+								"{{Host}}"
+							],
+							"port": "{{port}}",
+							"path": [
+								"api",
+								"v1",
+								"restaurants"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "getRestauentDetails",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{Host}}:{{port}}/api/v1/restaurants/2",
+							"protocol": "http",
+							"host": [
+								"{{Host}}"
+							],
+							"port": "{{port}}",
+							"path": [
+								"api",
+								"v1",
+								"restaurants",
+								"2"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "search restauant -restaurants?city=San%20Francisco",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/v1/restaurants",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"v1",
+								"restaurants"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Search",
+			"item": [
+				{
+					"name": "getFOODS - api/v1/search",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/v1/search?q=pasta",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"v1",
+								"search"
+							],
+							"query": [
+								{
+									"key": "q",
+									"value": "pasta"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "getFOODS - api/v1/search AI SEACRCH",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/v1/search?q=show me food without milk&AIFlag=true",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"v1",
+								"search"
+							],
+							"query": [
+								{
+									"key": "q",
+									"value": "show me food without milk"
+								},
+								{
+									"key": "AIFlag",
+									"value": "true"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "cart",
+			"item": [
+				{
+					"name": "add to cart",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "{{Authorization}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"restaurantId\":2,\n    \"itemId\":20,\n    \"displayName\":\"Chicken Alfredo Pasta\",\n    \"quantity\":1,\n    \"unitPrice\":12.50,\n    \"imageUrl\":\"/img/margherita1.jpg\"\n  }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/v1/cart/add",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"v1",
+								"cart",
+								"add"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "getCart /cart",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "{{Authorization}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"restaurantId\":1,\n    \"itemId\":1,\n    \"displayName\":\"Margherita Pizza\",\n    \"quantity\":2,\n    \"unitPrice\":12.99,\n    \"imageUrl\":\"/img/margherita1.jpg\"\n  }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/v1/cart",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"v1",
+								"cart"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "remove from cart",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "{{Authorization}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"itemId\":1\n  }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/v1/cart/remove",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"v1",
+								"cart",
+								"remove"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Menu",
+			"item": [
+				{
+					"name": "add- restaurants/menu/items",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "{{Authorization}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"canonicalName\": \"tandoori_chicken\",\n    \"displayName\": \"Tandoori Chicken\",\n    \"shortDescription\": \"Char-grilled chicken marinated in yogurt & spices\",\n    \"price\": 15.49,\n    \"quantity\": 50,\n    \"isAvailable\": true,\n    \"prepTimeMinutes\": 18,\n    \"imageUrls\": [\n        \"/img/tandoori_chicken.jpg\"\n    ],\n    \"profile\": {\n        \"categoryCode\": \"grill\",\n        \"categoryName\": \"Grilled\",\n        \"caloriesKcal\": 420,\n        \"carbsG\": 6,\n        \"proteinG\": 34,\n        \"fatsG\": 23,\n        \"spiceScore\": 4,\n        \"spiceLevel\": \"medium\",\n        \"allergens\": [\"milk\"],\n        \"tags\": [\"indian\", \"grilled\", \"non-veg\", \"spicy\"],\n        \"tasteProfile\": {\n            \"smoky\": true,\n            \"spicy\": true\n        }\n    },\n    \"ingredients\": [\n        { \"name\": \"chicken leg\", \"removable\": false },\n        { \"name\": \"yogurt marinade\", \"removable\": false },\n        { \"name\": \"lemon\", \"removable\": true }\n    ]\n}\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/v1/restaurants/menu/items",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"v1",
+								"restaurants",
+								"menu",
+								"items"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "parseIngredients -/parse-ingredients",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "{{Authorization}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"itemName\" : \"paneer cashew biryani\",\n    \"shortDescription\" : \"creaamy paneer cashew biryani\",\n    \"category\" : \"dessert\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/v1/restaurants/menu/parse-ingredients",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"v1",
+								"restaurants",
+								"menu",
+								"parse-ingredients"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "get Restaunrant menu - restaurants/menu/{restauentID}",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "{{Authorization}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"canonicalName\": \"grilled_veg_salad\",\n    \"displayName\": \"Grilled Vegetable Salad\",\n    \"shortDescription\": \"Seasonal grilled veg with vinaigrette\",\n    \"price\": 9.50,\n    \"quantity\": 30,\n    \"isAvailable\": true,\n    \"prepTimeMinutes\": 10,\n    \"imageUrls\": [\n        \"/img/salad1.jpg\"\n    ],\n    \"profile\": {\n        \"categoryCode\": \"salads\",\n        \"categoryName\": \"Salads\",\n        \"caloriesKcal\": 220,\n        \"tags\": [\n            \"vegan\",\n            \"gluten_free\"\n        ]\n    },\n    \"ingredients\": [\n        {\n            \"name\": \"zucchini\",\n            \"removable\": true\n        },\n        {\n            \"name\": \"pepper\",\n            \"removable\": true\n        },\n        {\n            \"name\": \"tomato\",\n            \"removable\": false\n        }\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/v1/restaurants/menu/2",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"v1",
+								"restaurants",
+								"menu",
+								"2"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "orders",
+			"item": [
+				{
+					"name": "getUserOrders",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{Authorization}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:8080/api/v1/orders",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"v1",
+								"orders"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "full order details",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{Authorization}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:8080/api/v1/orders/4",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"v1",
+								"orders",
+								"4"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "place order - /v1/orders",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{Authorization}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"paymentMethod\":\"credit_card\",\n    \"deliveryAddress\":\"Flat 12, 123 Market St, San Francisco, CA\",\n    \"deliveryLat\":37.7749,\n    \"deliveryLon\":-122.4194\n  }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/v1/orders",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"v1",
+								"orders"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "get order status",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{Authorization}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:8080/api/v1/orders/4/status",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"v1",
+								"orders",
+								"4",
+								"status"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "status confirmed - /orders/{orderId}/status",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{Authorization}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"status\":\"confirmed\",\n    \"note\":\"Payment received via Stripe — txn_ch_abc123\"\n  }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/v1/orders/3/status",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"v1",
+								"orders",
+								"3",
+								"status"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "status preparig - /order/{orderId}/status",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{Authorization}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"status\":\"preparing\",\n    \"note\":\"Started cooking\"\n  }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/v1/orders/4/status",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"v1",
+								"orders",
+								"4",
+								"status"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "status preparig - /order/{orderId}/status Copy",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{Authorization}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"status\":\"preparing\",\n    \"note\":\"Started cooking\"\n  }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/v1/orders/2/status",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"v1",
+								"orders",
+								"2",
+								"status"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Delivery",
+			"item": [
+				{
+					"name": "udpate user status",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{Authorization}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:8080/api/v1/deliveries/staus",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"v1",
+								"deliveries",
+								"staus"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "getAssignedDelivery",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{Authorization}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:8080/api/v1/deliveries/assigned",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"v1",
+								"deliveries",
+								"assigned"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "confirm pickUp",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{Authorization}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:8080/api/v1/deliveries/14/confirm-pickup",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"v1",
+								"deliveries",
+								"14",
+								"confirm-pickup"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "markdelviered",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{Authorization}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:8080/api/v1/deliveries/14/mark-delivered",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"v1",
+								"deliveries",
+								"14",
+								"mark-delivered"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "getHistoryOfDelivery",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{Authorization}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:8080/api/v1/deliveries/history",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"v1",
+								"deliveries",
+								"history"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Admin",
+			"item": [
+				{
+					"name": "admin dashboard",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{Authorization}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:8080/api/v1/admin/dashboard",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"v1",
+								"admin",
+								"dashboard"
+							],
+							"query": [
+								{
+									"key": "dateFrom",
+									"value": null,
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "admin user management",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{Authorization}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:8080/api/v1/admin/users",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"v1",
+								"admin",
+								"users"
+							],
+							"query": [
+								{
+									"key": "dateFrom",
+									"value": null,
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "fullUserProfile",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{Authorization}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:8080/api/v1/admin/users/5",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"v1",
+								"admin",
+								"users",
+								"5"
+							],
+							"query": [
+								{
+									"key": "dateFrom",
+									"value": null,
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "restaurants/pending",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{Authorization}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:8080/api/v1/admin/restaurants/pending",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"v1",
+								"admin",
+								"restaurants",
+								"pending"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "approve resturant",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{Authorization}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:8080/api/v1/admin/restaurants/1/approve?note=Docs%20verified",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"v1",
+								"admin",
+								"restaurants",
+								"1",
+								"approve"
+							],
+							"query": [
+								{
+									"key": "note",
+									"value": "Docs%20verified"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "reject restaurant",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{Authorization}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:8080/api/v1/admin/restaurants/1/reject?note=missing health cetificate",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"v1",
+								"admin",
+								"restaurants",
+								"1",
+								"reject"
+							],
+							"query": [
+								{
+									"key": "note",
+									"value": "missing health cetificate"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "get delivery staff",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{Authorization}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:8080/api/v1/admin/delivery-staff",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"v1",
+								"admin",
+								"delivery-staff"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "get orders",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{Authorization}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:8080/api/v1/admin/orders",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"v1",
+								"admin",
+								"orders"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "getTransactions",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{Authorization}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:8080/api/v1/admin/transactions",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"v1",
+								"admin",
+								"transactions"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "get orders details",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{Authorization}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:8080/api/v1/admin/orders/2",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"v1",
+								"admin",
+								"orders",
+								"2"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Submit rating",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{Authorization}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "[\n  {\n    \"itemId\": 1,\n    \"rating\": 2\n  },\n   {\n    \"itemId\": 2,\n    \"rating\": 4\n  }\n]",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/v1/orders/ratings",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"v1",
+								"orders",
+								"ratings"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}
